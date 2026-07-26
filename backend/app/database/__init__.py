@@ -11,6 +11,8 @@ from app.core.config import settings
 
 # SSL обов'язковий для Neon PostgreSQL; для SQLite connect_args порожні
 _connect_args = {"ssl": True} if settings.database_ssl_required else {}
+if settings.database_ssl_required:
+    _connect_args["statement_cache_size"] = 0
 
 engine = create_async_engine(
     settings.async_database_url,
