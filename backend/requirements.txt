@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg  # PostgreSQL (Neon/Render)
+alembic
+apscheduler
+pydantic
+pydantic-settings
+python-dotenv
+httpx
+groq
+python-dateutil
+aiosqlite

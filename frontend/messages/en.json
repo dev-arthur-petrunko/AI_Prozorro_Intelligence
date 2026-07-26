@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "tenders": "Tenders",
+    "companies": "Companies",
+    "buyers": "Buyers",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "AI Prozorro Intelligence",
+    "subtitle": "Public Procurement Monitoring",
+    "totalTenders": "Total Tenders",
+    "suspiciousTenders": "Suspicious",
+    "companies": "Companies",
+    "buyers": "Buyers",
+    "todayVolume": "Today's Volume",
+    "todayNew": "New Today",
+    "chartTitle": "Procurement Dynamics",
+    "topSuspicious": "Top Suspicious Tenders (Completed)",
+    "activeSuspicious": "Active Suspicious Tenders (Open)",
+    "latestReports": "Latest AI Reports",
+    "recentProcurements": "Recent Procurements",
+    "viewAll": "View all",
+    "noSuspicious": "No suspicious tenders detected"
+  },
+  "tenders": {
+    "title": "Tenders",
+    "tender": "Tender",
+    "search": "Search tenders...",
+    "filters": "Filters",
+    "region": "Region",
+    "category": "Category",
+    "riskScore": "Risk Score",
+    "amount": "Amount",
+    "status": "Status",
+    "date": "Date",
+    "buyer": "Buyer",
+    "winner": "Winner",
+    "participants": "Participants",
+    "aiAnalysis": "AI Analysis",
+    "riskFactors": "Risk Factors",
+    "noResults": "No tenders found"
+  },
+  "companies": {
+    "title": "Companies",
+    "search": "Search companies...",
+    "wins": "Wins",
+    "totalAmount": "Total Amount",
+    "avgAmount": "Avg Amount",
+    "region": "Region",
+    "recentTenders": "Recent Tenders"
+  },
+  "buyers": {
+    "title": "Buyers",
+    "search": "Search buyers...",
+    "tendersCount": "Tenders Count",
+    "totalAmount": "Total Amount",
+    "avgParticipants": "Avg Participants",
+    "region": "Region",
+    "recentTenders": "Recent Procurements"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "byCategory": "By Category",
+    "byRegion": "By Region",
+    "byCompany": "By Company",
+    "byBuyer": "By Buyer",
+    "priceDynamics": "Price Dynamics",
+    "company": "Company",
+    "buyer": "Buyer",
+    "wins": "Wins",
+    "tendersCount": "Tenders",
+    "totalAmount": "Total Amount"
+  },
+  "reports": {
+    "title": "Daily Reports",
+    "date": "Date",
+    "reportFor": "Report for",
+    "newTenders": "New Procurements",
+    "suspicious": "Suspicious",
+    "highestRisk": "Highest Risk",
+    "largestTender": "Largest Tender",
+    "topCategory": "Top Category",
+    "topRegion": "Top Region",
+    "noSuspicious": "No suspicious tenders for this day"
+  },
+  "risk": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "noData": "No data",
+    "viewAll": "View all",
+    "details": "Details",
+    "back": "Back",
+    "currency": "UAH",
+    "openSource": "Open Source",
+    "toggleTheme": "Toggle theme"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "dashboard": "Дашборд",
+    "tenders": "Тендери",
+    "companies": "Компанії",
+    "buyers": "Замовники",
+    "analytics": "Аналітика",
+    "reports": "Звіти",
+    "settings": "Налаштування"
+  },
+  "dashboard": {
+    "title": "AI Prozorro Intelligence",
+    "subtitle": "Моніторинг державних закупівель",
+    "totalTenders": "Усього тендерів",
+    "suspiciousTenders": "Підозрілі",
+    "companies": "Компанії",
+    "buyers": "Замовники",
+    "todayVolume": "Обсяг сьогодні",
+    "todayNew": "Нових сьогодні",
+    "chartTitle": "Динаміка закупівель",
+    "topSuspicious": "Топ підозрілі тендери (завершені)",
+    "activeSuspicious": "Активні підозрілі тендери (відкриті)",
+    "latestReports": "Останні AI звіти",
+    "recentProcurements": "Останні закупівлі",
+    "viewAll": "Переглянути всі",
+    "noSuspicious": "Підозрілих тендерів не виявлено"
+  },
+  "tenders": {
+    "title": "Тендери",
+    "tender": "Тендер",
+    "search": "Пошук тендерів...",
+    "filters": "Фільтри",
+    "region": "Регіон",
+    "category": "Категорія",
+    "riskScore": "Оцінка ризику",
+    "amount": "Сума",
+    "status": "Статус",
+    "date": "Дата",
+    "buyer": "Замовник",
+    "winner": "Переможець",
+    "participants": "Учасники",
+    "aiAnalysis": "AI-аналіз",
+    "riskFactors": "Фактори ризику",
+    "noResults": "Тендерів не знайдено"
+  },
+  "companies": {
+    "title": "Компанії",
+    "search": "Пошук компаній...",
+    "wins": "Перемоги",
+    "totalAmount": "Загальна сума",
+    "avgAmount": "Середня сума",
+    "region": "Регіон",
+    "recentTenders": "Останні тендери"
+  },
+  "buyers": {
+    "title": "Замовники",
+    "search": "Пошук замовників...",
+    "tendersCount": "Кількість закупівель",
+    "totalAmount": "Загальна сума",
+    "avgParticipants": "Сер. учасників",
+    "region": "Регіон",
+    "recentTenders": "Останні закупівлі"
+  },
+  "analytics": {
+    "title": "Аналітика",
+    "byCategory": "За категоріями",
+    "byRegion": "За регіонами",
+    "byCompany": "За компаніями",
+    "byBuyer": "За замовниками",
+    "priceDynamics": "Динаміка цін",
+    "company": "Компанія",
+    "buyer": "Замовник",
+    "wins": "Перемоги",
+    "tendersCount": "Тендери",
+    "totalAmount": "Загальна сума"
+  },
+  "reports": {
+    "title": "Щоденні звіти",
+    "date": "Дата",
+    "reportFor": "Звіт за",
+    "newTenders": "Нових закупівель",
+    "suspicious": "Підозрілих",
+    "highestRisk": "Найвищий ризик",
+    "largestTender": "Найбільша закупівля",
+    "topCategory": "Топ категорія",
+    "topRegion": "Топ регіон",
+    "noSuspicious": "Підозрілих тендерів за цей день немає"
+  },
+  "risk": {
+    "low": "Низький",
+    "medium": "Середній",
+    "high": "Високий",
+    "critical": "Критичний"
+  },
+  "common": {
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "noData": "Немає даних",
+    "viewAll": "Переглянути всі",
+    "details": "Деталі",
+    "back": "Назад",
+    "currency": "грн",
+    "openSource": "Відкритий код",
+    "toggleTheme": "Змінити тему"
+  }
+}

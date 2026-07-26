@@ -1,0 +1,34 @@
+# Render Blueprint - бекенд AI Prozorro Intelligence
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: ai-prozorro-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.4
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        sync: false # вставити Neon connection string у Render Dashboard
+      - key: GROQ_API_KEY
+        sync: false # вставити ключ Groq у Render Dashboard
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: GROQ_MAX_REQUESTS_PER_MINUTE
+        value: "28"
+      - key: GROQ_MAX_REQUESTS_PER_DAY
+        value: "950"
+      - key: BACKEND_CORS_ORIGINS
+        sync: false # напр.: https://your-app.vercel.app,http://localhost:3000
+      - key: SYNC_INTERVAL_MINUTES
+        value: "30"
+      - key: DATA_RETENTION_DAYS
+        value: "90"

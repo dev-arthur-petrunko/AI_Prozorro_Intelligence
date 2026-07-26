@@ -1,0 +1,119 @@
+"""
+AI Prozorro Intelligence - Планувальник задач.
+Запускає періодичну синхронізацію, аналітику та очищення даних.
+"""
+
+import asyncio
+import logging
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+scheduler = BackgroundScheduler()
+
+
+def _run_async(coro):
+    """Запустити асинхронну функцію з синхронного контексту."""
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
+def sync_job():
+    """Задача синхронізації з Prozorro."""
+    from app.collectors.sync_service import run_sync
+    logger.info("⏰ Запуск задачі синхронізації...")
+    _run_async(run_sync())
+
+
+def analytics_job():
+    """Задача перерахунку аналітики."""
+    from app.analytics.engine import recalculate_all
+    logger.info("⏰ Запуск задачі аналітики...")
+    _run_async(recalculate_all())
+
+
+def retention_job():
+    """Задача очищення застарілих даних."""
+    from app.analytics.retention import cleanup_old_data
+    logger.info("⏰ Запуск задачі очищення...")
+    _run_async(cleanup_old_data())
+
+
+def ai_analysis_job():
+    """Задача AI аналізу нових тендерів."""
+    from app.ai.analyzer import run_ai_analysis_batch
+    logger.info("⏰ Запуск AI аналізу...")
+    _run_async(run_ai_analysis_batch())
+
+
+def initial_import_job():
+    """Початковий імпорт (виконується один раз)."""
+    from app.collectors.sync_service import run_initial_import
+    logger.info("⏰ Запуск початкового імпорту...")
+    _run_async(run_initial_import())
+
+
+def start_scheduler():
+    """Запуск планувальника."""
+    # Синхронізація кожні N хвилин
+    scheduler.add_job(
+        sync_job,
+        trigger=IntervalTrigger(minutes=settings.sync_interval_minutes),
+        id="sync_prozorro",
+        name="Синхронізація з Prozorro",
+        replace_existing=True,
+    )
+    
+    # Перерахунок аналітики кожну годину
+    scheduler.add_job(
+        analytics_job,
+        trigger=IntervalTrigger(hours=1),
+        id="recalc_analytics",
+        name="Перерахунок аналітики",
+        replace_existing=True,
+    )
+    
+    # Очищення застарілих даних раз на добу (о 03:00)
+    scheduler.add_job(
+        retention_job,
+        trigger=CronTrigger(hour=3, minute=0),
+        id="cleanup_old_data",
+        name="Очищення застарілих даних",
+        replace_existing=True,
+    )
+    
+    # AI аналіз кожні 15 хвилин
+    scheduler.add_job(
+        ai_analysis_job,
+        trigger=IntervalTrigger(minutes=15),
+        id="ai_analysis",
+        name="AI аналіз тендерів",
+        replace_existing=True,
+    )
+    
+    # Початковий імпорт через 10 секунд після старту
+    scheduler.add_job(
+        initial_import_job,
+        trigger="date",
+        id="initial_import",
+        name="Початковий імпорт",
+        replace_existing=True,
+    )
+    
+    scheduler.start()
+    logger.info(f"✅ Планувальник запущено (синхронізація кожні {settings.sync_interval_minutes} хв)")
+
+
+def stop_scheduler():
+    """Зупинити планувальник."""
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+        logger.info("🛑 Планувальник зупинено")

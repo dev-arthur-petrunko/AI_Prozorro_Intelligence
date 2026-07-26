@@ -1,0 +1,103 @@
+{
+  "name": "AI Prozorro Intelligence - Daily Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24,
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily at 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.BACKEND_URL || 'http://localhost:8000'}}/daily-report",
+        "options": {}
+      },
+      "id": "http-request",
+      "name": "Get Daily Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $input.first().json;\n\nconst formatAmount = (amount) => {\n  if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)} млрд грн`;\n  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)} млн грн`;\n  if (amount >= 1000) return `${(amount / 1000).toFixed(1)} тис грн`;\n  return `${amount} грн`;\n};\n\nconst message = `🇺🇦 *AI Prozorro Intelligence*\n\n📅 ${report.date}\n\n📦 Нових закупівель: *${report.total_new_tenders}*\n🚨 Підозрілих: *${report.suspicious_count}*\n🔴 Найвищий Risk Score: *${report.highest_risk_score}*\n💰 Найбільша закупівля: *${formatAmount(report.largest_tender_amount)}*\n📈 Топ категорія: ${report.top_category || '—'}\n📍 Топ регіон: ${report.top_region || '—'}\n\n🔗 [Дашборд](${$env.FRONTEND_URL || 'https://your-app.vercel.app'}/uk/dashboard)`;\n\nreturn [{ json: { message } }];"
+      },
+      "id": "format-message",
+      "name": "Format Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_CHANNEL_ID}}",
+        "text": "={{$json.message}}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "telegram-send",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily at 20:00": {
+      "main": [
+        [
+          {
+            "node": "Get Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Daily Report": {
+      "main": [
+        [
+          {
+            "node": "Format Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
