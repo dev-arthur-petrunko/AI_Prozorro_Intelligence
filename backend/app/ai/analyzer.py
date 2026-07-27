@@ -16,6 +16,7 @@ from app.models.buyer import Buyer
 from app.models.company import Company
 from app.ai.risk_engine import analyze_tender_risk
 from app.ai.groq_client import generate_ai_explanation, rate_limiter
+from app.notifications.n8n_client import notify_suspicious_tender
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +97,9 @@ async def analyze_single_tender(tender: Tender, session: AsyncSession) -> None:
             tender.ai_analysis = explanation
     
     logger.debug(f"Tender {tender.prozorro_id}: risk_score={risk_score}")
+
+    # Миттєве сповіщення про підозрілий активний тендер (якщо умови виконані)
+    await notify_suspicious_tender(tender)
 
 
 async def run_ai_analysis_batch(force: bool = False, limit: int = 50):

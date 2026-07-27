@@ -6,10 +6,14 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
+from zoneinfo import ZoneInfo
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
+
+KYIV_TZ = ZoneInfo("Europe/Kyiv")
 
 
 async def sync_job():
@@ -38,6 +42,18 @@ async def ai_analysis_job():
     from app.ai.analyzer import run_ai_analysis_batch
     logger.info("⏰ Запуск AI аналізу...")
     await run_ai_analysis_batch()
+
+
+async def daily_report_job():
+    """Щоденний звіт о 13:00 за Києвом, відправка на n8n webhook."""
+    from app.database import async_session_factory
+    from app.api.routes.reports import get_daily_report
+    from app.notifications.n8n_client import send_daily_report
+
+    logger.info("⏰ Запуск щоденного звіту...")
+    async with async_session_factory() as session:
+        report = await get_daily_report(db=session)
+        await send_daily_report(report.model_dump(mode="json"))
 
 
 async def initial_import_job():
@@ -82,6 +98,15 @@ def start_scheduler():
         trigger=IntervalTrigger(minutes=15),
         id="ai_analysis",
         name="AI аналіз тендерів",
+        replace_existing=True,
+    )
+
+    # Щоденний звіт о 13:00 за Києвом
+    scheduler.add_job(
+        daily_report_job,
+        trigger=CronTrigger(hour=13, minute=0, timezone=KYIV_TZ),
+        id="daily_report",
+        name="Щоденний звіт",
         replace_existing=True,
     )
 

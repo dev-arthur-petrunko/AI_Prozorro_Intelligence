@@ -35,9 +35,12 @@ class Settings(BaseSettings):
     groq_max_requests_per_minute: int = 28
     groq_max_requests_per_day: int = 950
 
+    # n8n
+    n8n_webhook_url: str = ""
+
     # Telegram
-    telegram_bot_token: str = ""
-    telegram_channel_id: str = ""
+    #telegram_bot_token: str = ""
+    #telegram_channel_id: str = ""
 
     # Prozorro API
     prozorro_api_url: str = "https://public.api.openprocurement.org"

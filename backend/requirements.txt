@@ -12,4 +12,5 @@ groq
 python-dateutil
 aiosqlite
 psycopg2-binary
+tzdata
 
