@@ -115,7 +115,10 @@ async def generate_analytics_snapshot():
         top_reg_row = top_reg_result.first()
         top_region = top_reg_row[0] if top_reg_row else None
         
-        # Дані для графіків (останні 30 днів)
+        # Дані для графіків (останні 30 днів).
+        # Конкурентні процедури та reporting-звіти (прямі договори, публікуються
+        # пост-фактум зі статусом complete) рахуємо окремо, інакше пачки звітів
+        # спотворюють графік динаміки закупівель
         chart_data = []
         for i in range(30):
             d = today - timedelta(days=29 - i)
@@ -124,7 +127,15 @@ async def generate_analytics_snapshot():
             
             day_count = (await session.execute(
                 select(func.count(Tender.id)).where(
-                    Tender.published_date.between(day_start, day_end)
+                    Tender.published_date.between(day_start, day_end),
+                    (Tender.procurement_method.is_(None)) | (Tender.procurement_method != "reporting"),
+                )
+            )).scalar() or 0
+            
+            day_reports = (await session.execute(
+                select(func.count(Tender.id)).where(
+                    Tender.published_date.between(day_start, day_end),
+                    Tender.procurement_method == "reporting",
                 )
             )).scalar() or 0
             
@@ -137,6 +148,7 @@ async def generate_analytics_snapshot():
             chart_data.append({
                 "date": d.isoformat(),
                 "tenders_count": day_count,
+                "reports_count": day_reports,
                 "volume": float(day_volume),
             })
         

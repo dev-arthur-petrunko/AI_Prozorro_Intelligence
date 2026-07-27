@@ -11,6 +11,7 @@ import {
   BarChart3,
   FileBarChart,
   Settings,
+  Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const navItems = [
   { key: "analytics", href: "/analytics", icon: BarChart3 },
   { key: "reports", href: "/reports", icon: FileBarChart },
   { key: "settings", href: "/settings", icon: Settings },
+  { key: "legal", href: "/legal", icon: Scale },
 ] as const;
 
 export function Sidebar() {
@@ -64,10 +66,23 @@ export function Sidebar() {
           })}
         </nav>
 
+        {/* Компактний юридичний дисклеймер + посилання на повну сторінку */}
+        <div className="mx-3 mb-3 rounded-md border border-border bg-muted/30 p-3">
+          <div className="flex items-start gap-2">
+            <Scale className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <div className="text-[11px] leading-relaxed text-muted-foreground">
+              <p>{tc("aiDisclaimer")}</p>
+              <Link href="/legal" className="mt-1 inline-block text-primary hover:underline">
+                {tc("legalMore")} →
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
         <div className="border-t border-border px-6 py-4">
           <p className="text-xs text-muted-foreground">
-            v1.1.0 &middot; {tc("openSource")}
+            v1.2.0 &middot; {tc("openSource")}
           </p>
         </div>
       </div>

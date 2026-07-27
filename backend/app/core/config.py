@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Додаток
     app_name: str = "AI Prozorro Intelligence"
-    app_version: str = "1.0.0"
+    app_version: str = "1.2.0"
     app_env: str = "development"
     debug: bool = True
 
@@ -37,6 +37,15 @@ class Settings(BaseSettings):
 
     # n8n
     n8n_webhook_url: str = ""
+
+    # Дашборд: мінімальна сума для блоку "Топ за індексом ризику".
+    # Мікрозакупівлі до 10 тис. грн - шум для антикорупційного аналізу
+    dashboard_suspicious_min_amount: float = 10_000
+    # Якщо тендерів з risk > 60 немає - показуємо кандидатів з risk >= 40
+    dashboard_suspicious_fallback_risk: int = 40
+    # Поріг ризику для блоку активних підозрілих (нижчий за 61,
+    # бо активні тендери ще не завжди повністю оброблені AI-скорингом)
+    dashboard_active_risk_min: int = 50
 
     # Telegram
     #telegram_bot_token: str = ""

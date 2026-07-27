@@ -6,24 +6,41 @@
     "buyers": "Buyers",
     "analytics": "Analytics",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "legal": "Legal"
   },
   "dashboard": {
     "title": "AI Prozorro Intelligence",
     "subtitle": "Public Procurement Monitoring",
     "totalTenders": "Total Tenders",
-    "suspiciousTenders": "Suspicious",
+    "suspiciousTenders": "High Risk Index (AI)",
     "companies": "Companies",
     "buyers": "Buyers",
     "todayVolume": "Today's Volume",
     "todayNew": "New Today",
     "chartTitle": "Procurement Dynamics",
-    "topSuspicious": "Top Suspicious Tenders (Completed)",
-    "activeSuspicious": "Active Suspicious Tenders (Open)",
+    "topSuspicious": "Top by Risk Index (AI) — Completed",
+    "activeSuspicious": "Active with High Risk Index (AI)",
     "latestReports": "Latest AI Reports",
     "recentProcurements": "Recent Procurements",
     "viewAll": "View all",
-    "noSuspicious": "No suspicious tenders detected"
+    "noSuspicious": "No tenders with a high risk index detected",
+    "dataUpdated": "Data updated",
+    "chartYAxis": "Tenders count",
+    "chartCompetitive": "Competitive tenders",
+    "chartReporting": "Contract reports (direct awards)",
+    "chartHighRisk": "High risk index (AI)",
+    "chartMetricCount": "Count",
+    "chartMetricAmount": "Amount, UAH",
+    "incompleteDay": "today, day is not over yet",
+    "suspiciousMinAmountNote": "from 10K UAH",
+    "period": "Period",
+    "period7": "7 days",
+    "period30": "30 days",
+    "period90": "90 days",
+    "periodAll": "All time",
+    "openInProzorro": "Open in Prozorro",
+    "chartCoverageNote": "The chart shows only tenders stored in the system database. \"Contract reports\" are direct awards (reporting) that Prozorro publishes post-factum in batches, so their curve may spike on sync days."
   },
   "tenders": {
     "title": "Tenders",
@@ -32,14 +49,14 @@
     "filters": "Filters",
     "region": "Region",
     "category": "Category",
-    "riskScore": "Risk Score",
+    "riskScore": "Risk Index (AI)",
     "amount": "Amount",
     "status": "Status",
     "date": "Date",
     "buyer": "Buyer",
     "winner": "Winner",
     "participants": "Participants",
-    "aiAnalysis": "AI Analysis",
+    "aiAnalysis": "Analytical Commentary (AI)",
     "riskFactors": "Risk Factors",
     "noResults": "No tenders found"
   },
@@ -50,7 +67,9 @@
     "totalAmount": "Total Amount",
     "avgAmount": "Avg Amount",
     "region": "Region",
-    "recentTenders": "Recent Tenders"
+    "recentTenders": "Recent Tenders",
+    "anonymized": "Anonymized",
+    "anonymizedNote": "Prozorro hides winners of defense procurements under the generic \"Defense Supplier\" record. This is not a single company but an aggregate of different real suppliers. Average amount is calculated only over tenders with a known value."
   },
   "buyers": {
     "title": "Buyers",
@@ -72,25 +91,53 @@
     "buyer": "Buyer",
     "wins": "Wins",
     "tendersCount": "Tenders",
-    "totalAmount": "Total Amount"
+    "totalAmount": "Total Amount",
+    "top10Regions": "Top 10 Regions",
+    "allRegions": "All Regions",
+    "top10Categories": "Top 10 Categories",
+    "metricCount": "Tenders count",
+    "metricAmount": "Amount, UAH",
+    "category": "Category",
+    "dataUpdated": "Data updated",
+    "period": "Period",
+    "period7": "7 days",
+    "period30": "30 days",
+    "period90": "90 days",
+    "periodAll": "All time"
   },
   "reports": {
     "title": "Daily Reports",
     "date": "Date",
     "reportFor": "Report for",
     "newTenders": "New Procurements",
-    "suspicious": "Suspicious",
-    "highestRisk": "Highest Risk",
+    "suspicious": "High Risk Index (AI)",
+    "highestRisk": "Highest Risk Index",
     "largestTender": "Largest Tender",
     "topCategory": "Top Category",
     "topRegion": "Top Region",
-    "noSuspicious": "No suspicious tenders for this day"
+    "noSuspicious": "No tenders with a high risk index for this day"
   },
   "risk": {
     "low": "Low",
     "medium": "Medium",
     "high": "High",
     "critical": "Critical"
+  },
+  "legal": {
+    "title": "Data Source and Legal Framework",
+    "dataSourceTitle": "Data Source and Legal Framework",
+    "dataSourceP1": "All data used on this platform (information about tenders, participants, procuring entities, amounts and procurement statuses) is obtained from the official Prozorro public procurement system via its open API and constitutes public information in the form of open data.",
+    "dataSourceP2": "According to the official position of SE \"PROZORRO\", the data of the Unified Electronic Procurement System is permitted for further free use and distribution. Any person may freely copy, publish, distribute and use this information, including for commercial purposes, in combination with other information or by including it in their own product, provided that a mandatory reference to the source of such information is given.",
+    "lawsIntro": "The use of this data is also based on:",
+    "law1": "The Law of Ukraine \"On Access to Public Information\";",
+    "law2": "The Law of Ukraine \"On Public Procurement\";",
+    "law3": "Resolution of the Cabinet of Ministers of Ukraine No. 835 \"On Approval of the Regulation on Data Sets Subject to Publication in the Form of Open Data\", which classifies public procurement data as mandatory open data sets.",
+    "sourceLabel": "Data source:",
+    "sourceValue": "prozorro.gov.ua / official Prozorro system API",
+    "aiTitle": "Disclaimer on AI Analysis and the Risk Index",
+    "aiP1": "The \"Risk Index (AI)\" is generated by an automated model based on publicly available Prozorro data (number of participants, buyer history, procurement characteristics, etc.) and reflects the statistical correspondence of a tender to typical procurement patterns.",
+    "aiP2": "This index is a preliminary analytical assessment and is not a conclusion about a violation of the law, the presence of corrupt actions, or bad faith of the procuring entity or procurement participant. The final assessment of a procurement's compliance with the law can only be provided by an authorized state body (in particular, the Antimonopoly Committee of Ukraine, the State Audit Service of Ukraine) based on the results of an official review.",
+    "aiP3": "The platform is not a mass media outlet and does not conduct journalistic investigations — it provides an open-data analytics tool for informational purposes."
   },
   "common": {
     "loading": "Loading...",
@@ -101,6 +148,8 @@
     "back": "Back",
     "currency": "UAH",
     "openSource": "Open Source",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "aiDisclaimer": "The \"Risk Index (AI)\" is a preliminary analytical assessment based on Prozorro open data. It is not a conclusion about a violation of the law and has no legal force.",
+    "legalMore": "Data Source and Legal Framework"
   }
 }

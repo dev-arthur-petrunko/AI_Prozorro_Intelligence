@@ -43,6 +43,10 @@ export interface DashboardKPI {
 export interface ChartDataPoint {
   date: string;
   tenders_count: number;
+  reports_count?: number;
+  tenders_volume?: number;
+  reports_volume?: number;
+  high_risk_count?: number;
   volume: number;
   new_tenders: number;
 }
@@ -125,14 +129,16 @@ export interface DashboardResponse {
   suspicious_tenders: TenderResponse[];
   active_suspicious_tenders: TenderResponse[];
   recent_tenders: TenderResponse[];
+  last_updated: string | null;
 }
 
 export interface AnalyticsResponse {
-  categories: { cpv_code: string; name?: string; tenders_count: number; total_amount: number }[];
+  categories: { cpv_code: string; name?: string | null; tenders_count: number; total_amount: number }[];
   regions: { region: string; tenders_count: number; total_amount: number }[];
   top_companies: CompanyResponse[];
   top_buyers: BuyerResponse[];
   price_dynamics: ChartDataPoint[];
+  last_updated: string | null;
 }
 
 export interface DailyReportResponse {
@@ -156,7 +162,8 @@ export interface HealthResponse {
 
 // API Functions
 export const api = {
-  getDashboard: () => fetchAPI<DashboardResponse>("/dashboard"),
+  getDashboard: (days?: number) =>
+    fetchAPI<DashboardResponse>(`/dashboard${days ? `?days=${days}` : ""}`),
   
   getTenders: (params?: Record<string, string | number>) => {
     const query = params ? "?" + new URLSearchParams(
@@ -185,7 +192,8 @@ export const api = {
   
   getBuyer: (id: number) => fetchAPI<BuyerResponse>(`/buyers/${id}`),
   
-  getAnalytics: () => fetchAPI<AnalyticsResponse>("/analytics"),
+  getAnalytics: (days?: number) =>
+    fetchAPI<AnalyticsResponse>(`/analytics${days ? `?days=${days}` : ""}`),
   
   getDailyReport: () => fetchAPI<DailyReportResponse>("/daily-report"),
   

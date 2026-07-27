@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api, BuyerListResponse } from "@/services/api";
-import { Link } from "@/i18n/navigation";
 
 function formatAmount(amount: number): string {
   if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}B`;
@@ -43,6 +42,7 @@ export default function BuyersPage() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
@@ -57,12 +57,11 @@ export default function BuyersPage() {
               {data?.items.map((buyer) => (
                 <tr key={buyer.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                   <td className="px-4 py-3">
-                    <Link href={`/buyers/${buyer.id}`} className="hover:text-primary">
-                      <p className="font-medium">{buyer.name}</p>
-                      {buyer.edrpou && (
-                        <p className="text-xs text-muted-foreground">EDRPOU: {buyer.edrpou}</p>
-                      )}
-                    </Link>
+                    {/* Сторінки деталей замовника поки немає - без посилання, щоб не було 404 */}
+                    <p className="font-medium">{buyer.name}</p>
+                    {buyer.edrpou && (
+                      <p className="text-xs text-muted-foreground">EDRPOU: {buyer.edrpou}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{buyer.region ?? "—"}</td>
                   <td className="px-4 py-3 text-right font-mono">{buyer.tenders_count}</td>
@@ -72,6 +71,7 @@ export default function BuyersPage() {
               ))}
             </tbody>
           </table>
+        </div>
         </CardContent>
       </Card>
 

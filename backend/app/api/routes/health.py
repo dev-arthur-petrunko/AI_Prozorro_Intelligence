@@ -21,15 +21,18 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         result = await db.execute(select(func.count(Tender.id)))
         count = result.scalar() or 0
         db_status = "connected"
+        last_sync = (await db.execute(select(func.max(Tender.updated_at)))).scalar()
     except Exception:
         count = 0
         db_status = "disconnected"
+        last_sync = None
 
     return HealthResponse(
         status="ok",
         version=settings.app_version,
         database=db_status,
         tenders_count=count,
+        last_sync=last_sync.isoformat() if last_sync else None,
     )
 
 

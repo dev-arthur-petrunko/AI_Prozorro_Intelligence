@@ -12,6 +12,7 @@ import {
   FileBarChart,
   Settings,
   Menu,
+  Scale,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -24,10 +25,12 @@ const navItems = [
   { key: "analytics", href: "/analytics", icon: BarChart3 },
   { key: "reports", href: "/reports", icon: FileBarChart },
   { key: "settings", href: "/settings", icon: Settings },
+  { key: "legal", href: "/legal", icon: Scale },
 ] as const;
 
 export function MobileNav() {
   const t = useTranslations("nav");
+  const tc = useTranslations("common");
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -67,6 +70,22 @@ export function MobileNav() {
               );
             })}
           </nav>
+          {/* Компактний юридичний дисклеймер + посилання на повну сторінку */}
+          <div className="mx-3 mb-3 rounded-md border border-border bg-muted/30 p-3">
+            <div className="flex items-start gap-2">
+              <Scale className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <div className="text-[11px] leading-relaxed text-muted-foreground">
+                <p>{tc("aiDisclaimer")}</p>
+                <Link
+                  href="/legal"
+                  onClick={() => setOpen(false)}
+                  className="mt-1 inline-block text-primary hover:underline"
+                >
+                  {tc("legalMore")} →
+                </Link>
+              </div>
+            </div>
+          </div>
         </SheetContent>
       </Sheet>
     </div>

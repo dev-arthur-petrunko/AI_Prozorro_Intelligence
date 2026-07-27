@@ -19,6 +19,9 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Завершені статуси: дані фінальні, готовий AI-аналіз лишаємо як є
+COMPLETED_STATUSES = {"complete", "unsuccessful", "cancelled"}
+
 
 async def get_or_create_buyer(session: AsyncSession, buyer_info: dict) -> Buyer:
     """Отримати або створити замовника."""
@@ -63,7 +66,10 @@ async def get_or_create_company(session: AsyncSession, company_info: dict) -> Co
 
 
 async def import_tender(session: AsyncSession, normalized_data: dict) -> bool:
-    """Імпортувати один тендер у базу даних."""
+    """
+    Імпортувати або оновити один тендер.
+    Повертає True, якщо створено НОВИЙ запис.
+    """
     prozorro_id = normalized_data.get("prozorro_id")
     if not prozorro_id:
         return False
@@ -72,9 +78,7 @@ async def import_tender(session: AsyncSession, normalized_data: dict) -> bool:
     existing = result.scalar_one_or_none()
 
     if existing:
-        existing.status = normalized_data.get("status", existing.status)
-        existing.participants_count = normalized_data.get("participants_count", existing.participants_count)
-        existing.updated_at = datetime.utcnow()
+        await _update_existing_tender(session, existing, normalized_data)
         return False
 
     buyer_id = None
@@ -94,11 +98,13 @@ async def import_tender(session: AsyncSession, normalized_data: dict) -> bool:
         title=normalized_data["title"],
         description=normalized_data.get("description"),
         status=normalized_data.get("status", "active"),
+        procurement_method=normalized_data.get("procurement_method"),
         cpv_code=normalized_data.get("cpv_code"),
         region=normalized_data.get("region"),
         published_date=normalized_data.get("published_date"),
         end_date=normalized_data.get("end_date"),
         amount=normalized_data.get("amount"),
+        final_amount=normalized_data.get("final_amount"),
         currency=normalized_data.get("currency", "UAH"),
         participants_count=normalized_data.get("participants_count", 0),
         buyer_id=buyer_id,
@@ -106,6 +112,52 @@ async def import_tender(session: AsyncSession, normalized_data: dict) -> bool:
     )
     session.add(tender)
     return True
+
+
+async def _update_existing_tender(session: AsyncSession, existing: Tender, normalized_data: dict) -> None:
+    """
+    Оновити наявний тендер новими даними з Prozorro.
+
+    Логіка переаналізу (analysis_stale):
+    - якщо тендер БУВ завершений (COMPLETED_STATUSES) - дані фінальні,
+      готовий AI-аналіз не чіпаємо;
+    - якщо був НЕзавершений і змінилися значущі для ризику поля
+      (статус, к-сть учасників, фінальна ціна, переможець) -
+      ставимо прапорець на повторний аналіз.
+    """
+    old_status = existing.status
+    was_completed = old_status in COMPLETED_STATUSES
+
+    new_status = normalized_data.get("status", old_status)
+    new_participants = normalized_data.get("participants_count", existing.participants_count)
+    new_final = normalized_data.get("final_amount")
+
+    significant_change = False
+    if new_status != old_status:
+        significant_change = True
+    if new_participants != existing.participants_count:
+        significant_change = True
+    if new_final is not None and new_final != existing.final_amount:
+        significant_change = True
+
+    # Переможець міг з'явитися при переході active -> complete
+    winner_info = normalized_data.pop("winner_info", None)
+    if winner_info and not existing.winner_id:
+        company = await get_or_create_company(session, winner_info)
+        existing.winner_id = company.id
+        significant_change = True
+
+    existing.status = new_status
+    existing.participants_count = new_participants
+    if not existing.procurement_method:
+        existing.procurement_method = normalized_data.get("procurement_method")
+    if new_final is not None:
+        existing.final_amount = new_final
+    existing.updated_at = datetime.utcnow()
+
+    # Переаналіз лише для тендерів, що ще НЕ були завершені раніше
+    if significant_change and not was_completed:
+        existing.analysis_stale = True
 
 
 async def run_initial_import():
@@ -165,7 +217,12 @@ async def run_sync():
         await session.commit()
         logger.info(f"Синхронізація завершена: {new_count} нових тендерів")
 
-        if new_count > 0:
+        # Аналітику/AI запускаємо, якщо є нові АБО є тендери, що потребують переаналізу
+        stale_count = (await session.execute(
+            select(func.count(Tender.id)).where(Tender.analysis_stale.is_(True))
+        )).scalar() or 0
+
+        if new_count > 0 or stale_count > 0:
             from app.analytics.engine import recalculate_all
             await recalculate_all()
             from app.ai.analyzer import run_ai_analysis_batch

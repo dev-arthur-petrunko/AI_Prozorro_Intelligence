@@ -95,7 +95,13 @@ async def analyze_single_tender(tender: Tender, session: AsyncSession) -> None:
         )
         if explanation:
             tender.ai_analysis = explanation
-    
+    else:
+        # Низький ризик - розгорнутий коментар не потрібен, прибираємо застарілий
+        tender.ai_analysis = None
+
+    # Аналіз актуальний - знімаємо прапорець переаналізу
+    tender.analysis_stale = False
+
     logger.debug(f"Tender {tender.prozorro_id}: risk_score={risk_score}")
 
     # Миттєве сповіщення про підозрілий активний тендер (якщо умови виконані)
@@ -122,12 +128,14 @@ async def run_ai_analysis_batch(force: bool = False, limit: int = 50):
                 .limit(limit)
             )
         else:
-            # Знайти тендери без оцінки ризику АБО без AI пояснення (для ризикових)
+            # Тендери без оцінки ризику, АБО ризикові без пояснення,
+            # АБО ті, що потребують переаналізу (значуще оновлення статусу/даних)
             query = (
                 select(Tender)
                 .where(
                     (Tender.risk_score.is_(None)) |
-                    ((Tender.risk_score > 30) & (Tender.ai_analysis.is_(None)))
+                    ((Tender.risk_score > 30) & (Tender.ai_analysis.is_(None))) |
+                    (Tender.analysis_stale.is_(True))
                 )
                 .order_by(Tender.risk_score.desc().nullslast())
                 .limit(limit)

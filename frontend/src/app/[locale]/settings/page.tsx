@@ -22,7 +22,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Version</span>
-              <span>1.1.0</span>
+              <span>1.2.0</span>
             </div>
           </div>
         </CardContent>

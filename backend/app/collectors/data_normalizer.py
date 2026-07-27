@@ -70,6 +70,16 @@ def extract_winner_info(tender_data: Dict[str, Any]) -> Optional[Dict[str, Any]]
     return None
 
 
+def extract_final_amount(tender_data: Dict[str, Any]) -> Optional[float]:
+    """Фінальна ціна з активного award (ціна переможця після аукціону)."""
+    for award in tender_data.get("awards", []):
+        if award.get("status") == "active":
+            value = award.get("value", {})
+            if isinstance(value, dict):
+                return value.get("amount")
+    return None
+
+
 def count_participants(tender_data: Dict[str, Any]) -> int:
     """Підрахувати кількість учасників."""
     bids = tender_data.get("bids", [])
@@ -122,11 +132,13 @@ def normalize_tender(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         "title": raw_data.get("title", "Без назви"),
         "description": raw_data.get("description"),
         "status": raw_data.get("status", "active"),
+        "procurement_method": raw_data.get("procurementMethodType"),
         "cpv_code": extract_cpv(raw_data),
         "region": extract_region(raw_data),
         "published_date": parse_date(raw_data.get("dateCreated") or raw_data.get("date")),
         "end_date": parse_date(raw_data.get("tenderPeriod", {}).get("endDate")),
         "amount": amount,
+        "final_amount": extract_final_amount(raw_data),
         "currency": currency,
         "participants_count": count_participants(raw_data),
         "buyer_info": extract_buyer_info(raw_data),

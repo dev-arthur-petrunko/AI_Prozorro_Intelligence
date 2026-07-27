@@ -2,11 +2,10 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { Search, Building2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api, CompanyListResponse } from "@/services/api";
-import { Link } from "@/i18n/navigation";
 
 function formatAmount(amount: number): string {
   if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}B`;
@@ -14,6 +13,10 @@ function formatAmount(amount: number): string {
   if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`;
   return amount.toFixed(0);
 }
+
+// Знеособлені постачальники Prozorro: оборонні закупівлі приховують переможця
+// під записом "Оборонний постачальник" з фіктивним ЄДРПОУ
+const ANONYMIZED_EDRPOUS = ["88888888", "00000000"];
 
 export default function CompaniesPage() {
   const t = useTranslations("companies");
@@ -43,6 +46,7 @@ export default function CompaniesPage() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
@@ -54,24 +58,37 @@ export default function CompaniesPage() {
               </tr>
             </thead>
             <tbody>
-              {data?.items.map((company) => (
+              {data?.items.map((company) => {
+                const isAnonymized = !!company.edrpou && ANONYMIZED_EDRPOUS.includes(company.edrpou);
+                return (
                 <tr key={company.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                   <td className="px-4 py-3">
-                    <Link href={`/companies/${company.id}`} className="hover:text-primary">
-                      <p className="font-medium">{company.name}</p>
-                      {company.edrpou && (
-                        <p className="text-xs text-muted-foreground">EDRPOU: {company.edrpou}</p>
+                    {/* Сторінки деталей компанії поки немає - без посилання, щоб не було 404 */}
+                    <p className="font-medium">
+                      {company.name}
+                      {isAnonymized && (
+                        <span
+                          className="ml-2 inline-flex cursor-help items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-normal text-amber-500"
+                          title={t("anonymizedNote")}
+                        >
+                          {t("anonymized")}
+                        </span>
                       )}
-                    </Link>
+                    </p>
+                    {company.edrpou && (
+                      <p className="text-xs text-muted-foreground">EDRPOU: {company.edrpou}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{company.region ?? "—"}</td>
                   <td className="px-4 py-3 text-right font-mono">{company.wins_count}</td>
                   <td className="px-4 py-3 text-right font-mono">{formatAmount(company.total_amount)}</td>
                   <td className="px-4 py-3 text-right font-mono">{formatAmount(company.avg_amount)}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
+        </div>
         </CardContent>
       </Card>
 

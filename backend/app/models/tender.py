@@ -5,7 +5,7 @@ AI Prozorro Intelligence - Модель тендеру.
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Float, Integer, DateTime, Text, ForeignKey, Index
+from sqlalchemy import String, Float, Integer, DateTime, Text, ForeignKey, Index, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,11 +21,16 @@ class Tender(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(64), nullable=False, default="active")
+    # Тип процедури Prozorro (procurementMethodType): reporting = звіт про
+    # укладений договір (пряма закупівля), решта - конкурентні процедури
+    procurement_method: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     cpv_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
     region: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
     published_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    # Фінальна ціна активного award (для фактора "відсутність зниження ціни")
+    final_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="UAH")
     
     # Зв'язки
@@ -39,6 +44,9 @@ class Tender(Base):
     risk_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
     ai_analysis: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     risk_factors: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
+    # Прапорець "потрібен переаналіз": ставиться, коли у НЕзавершеного тендера
+    # змінилися значущі поля (статус, учасники, ціна, переможець)
+    analysis_stale: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     
     # Метадані
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

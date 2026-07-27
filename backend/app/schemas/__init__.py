@@ -143,7 +143,15 @@ class DashboardKPI(BaseModel):
 class ChartDataPoint(BaseModel):
     """Точка даних для графіка."""
     date: str
+    # Конкурентні процедури (без reporting-звітів)
     tenders_count: int = 0
+    # Звіти про укладені договори (procurementMethodType=reporting)
+    reports_count: int = 0
+    # Обсяги в грн по кожній серії
+    tenders_volume: float = 0.0
+    reports_volume: float = 0.0
+    # Тендери з високим індексом ризику (risk_score >= 61)
+    high_risk_count: int = 0
     volume: float = 0.0
     new_tenders: int = 0
 
@@ -155,6 +163,8 @@ class DashboardResponse(BaseModel):
     suspicious_tenders: List[TenderResponse] = []
     active_suspicious_tenders: List[TenderResponse] = []
     recent_tenders: List[TenderResponse] = []
+    # Час останнього оновлення даних (остання синхронізація з Prozorro)
+    last_updated: Optional[datetime] = None
 
 
 # === Analytics Schemas ===
@@ -181,6 +191,8 @@ class AnalyticsResponse(BaseModel):
     top_companies: List[CompanyResponse] = []
     top_buyers: List[BuyerResponse] = []
     price_dynamics: List[ChartDataPoint] = []
+    # Час останнього оновлення даних
+    last_updated: Optional[datetime] = None
 
 
 # === Daily Report ===

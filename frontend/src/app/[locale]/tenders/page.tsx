@@ -153,9 +153,16 @@ function TendersContent() {
                   <tr key={tender.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                     <td className="px-4 py-3">
                       <Link href={`/tenders/${tender.id}`} className="hover:text-primary">
-                        <p className="max-w-xs truncate font-medium">{tender.title}</p>
-                        <p className="text-xs text-muted-foreground">{tender.prozorro_id}</p>
+                        <p className="max-w-xs truncate font-medium" title={tender.title}>{tender.title}</p>
                       </Link>
+                      <a
+                        href={`https://prozorro.gov.ua/tender/${tender.prozorro_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                      >
+                        {tender.prozorro_id} ↗
+                      </a>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{tender.region ?? "—"}</td>
                     <td className="px-4 py-3 text-right font-mono">

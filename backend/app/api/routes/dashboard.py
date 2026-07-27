@@ -2,18 +2,19 @@
 AI Prozorro Intelligence - Dashboard endpoint.
 """
 
-import json
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+from typing import Optional
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, desc
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select, func, desc, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.dependencies import get_db
 from app.models.tender import Tender
 from app.models.company import Company
 from app.models.buyer import Buyer
-from app.models.analytics import AnalyticsSnapshot
+from app.ai.risk_engine import attention_priority
 from app.schemas import (
     DashboardResponse, DashboardKPI, ChartDataPoint, TenderResponse
 )
@@ -64,14 +65,44 @@ def _dedupe_tenders(tenders, limit: int):
     return unique
 
 
+def _top_by_attention(tenders, limit: int):
+    """
+    Відсортувати кандидатів за пріоритетом уваги (risk_score x log10(сума)),
+    щоб дрібні закупівлі з високим score не витісняли великі з середнім,
+    і прибрати візуальні дублі.
+    """
+    ranked = sorted(
+        tenders,
+        key=lambda t: attention_priority(t.risk_score, t.amount),
+        reverse=True,
+    )
+    return _dedupe_tenders(ranked, limit=limit)
+
+
 @router.get("", response_model=DashboardResponse)
-async def get_dashboard(db: AsyncSession = Depends(get_db)):
+async def get_dashboard(
+    days: Optional[int] = Query(None, ge=1, le=365, description="Період у днях (7/30/90), без значення - за весь час"),
+    db: AsyncSession = Depends(get_db),
+):
     """Отримати дані для головної сторінки дашборду."""
-    
+
+    # Відсічення за періодом (за датою публікації тендера)
+    period_start = None
+    if days:
+        period_start = datetime.combine(date.today() - timedelta(days=days - 1), datetime.min.time())
+
+    def with_period(query):
+        """Додати фільтр періоду до запиту (якщо заданий)."""
+        if period_start is not None:
+            return query.where(Tender.published_date >= period_start)
+        return query
+
     # KPI
-    total_tenders = (await db.execute(select(func.count(Tender.id)))).scalar() or 0
+    total_tenders = (await db.execute(
+        with_period(select(func.count(Tender.id)))
+    )).scalar() or 0
     suspicious = (await db.execute(
-        select(func.count(Tender.id)).where(Tender.risk_score > 60)
+        with_period(select(func.count(Tender.id)).where(Tender.risk_score > 60))
     )).scalar() or 0
     total_companies = (await db.execute(select(func.count(Company.id)))).scalar() or 0
     total_buyers = (await db.execute(select(func.count(Buyer.id)))).scalar() or 0
@@ -96,57 +127,115 @@ async def get_dashboard(db: AsyncSession = Depends(get_db)):
         today_new=today_new,
     )
 
-    # Chart data з аналітичного знімку
-    chart_data = []
-    snapshot = (await db.execute(
-        select(AnalyticsSnapshot).order_by(desc(AnalyticsSnapshot.snapshot_date)).limit(1)
-    )).scalar_one_or_none()
-    
-    if snapshot and snapshot.data_json:
-        try:
-            raw_chart = json.loads(snapshot.data_json)
-            chart_data = [ChartDataPoint(**point) for point in raw_chart]
-        except (json.JSONDecodeError, TypeError):
-            pass
-
-    # Топ підозрілі ЗАВЕРШЕНІ тендери (статус complete/unsuccessful/cancelled)
-    suspicious_result = await db.execute(
-        select(Tender)
-        .where(
-            Tender.risk_score > 60,
-            Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
+    # Дані графіка рахуємо наживо з БД одним групованим запитом
+    # (а не зі снапшоту: інший інстанс зі старим кодом може перезаписувати
+    # снапшот без поділу на конкурентні/reporting)
+    chart_days = days if days else 30
+    chart_start = datetime.combine(date.today() - timedelta(days=chart_days - 1), datetime.min.time())
+    is_reporting = case((Tender.procurement_method == "reporting", 1), else_=0)
+    is_high_risk = case((Tender.risk_score >= 61, 1), else_=0)
+    amount0 = func.coalesce(Tender.amount, 0)
+    chart_rows = (await db.execute(
+        select(
+            func.date(Tender.published_date).label("d"),
+            func.sum(1 - is_reporting),                    # конкурентні (шт)
+            func.sum(is_reporting),                        # звіти (шт)
+            func.sum((1 - is_reporting) * amount0),        # конкурентні (грн)
+            func.sum(is_reporting * amount0),              # звіти (грн)
+            func.sum(is_high_risk),                        # з високим індексом ризику (шт)
         )
-        .order_by(desc(Tender.risk_score))
+        .where(Tender.published_date >= chart_start)
+        .group_by(func.date(Tender.published_date))
+    )).all()
+    by_date = {str(r[0]): r for r in chart_rows}
+
+    chart_data = []
+    for i in range(chart_days):
+        d = date.today() - timedelta(days=chart_days - 1 - i)
+        r = by_date.get(d.isoformat())
+        chart_data.append(ChartDataPoint(
+            date=d.isoformat(),
+            tenders_count=int(r[1] or 0) if r else 0,
+            reports_count=int(r[2] or 0) if r else 0,
+            tenders_volume=float(r[3] or 0) if r else 0.0,
+            reports_volume=float(r[4] or 0) if r else 0.0,
+            high_risk_count=int(r[5] or 0) if r else 0,
+            volume=float((r[3] or 0) + (r[4] or 0)) if r else 0.0,
+        ))
+
+    # Топ за індексом ризику - ЗАВЕРШЕНІ (complete/unsuccessful/cancelled).
+    # Жорсткий фільтр лише один: сума >= 10 тис. грн (мікрозакупівлі - шум).
+    # Reporting-звіти (прямі договори) виключаємо: один учасник там - норма
+    not_reporting = (Tender.procurement_method.is_(None)) | (Tender.procurement_method != "reporting")
+    min_amount = settings.dashboard_suspicious_min_amount
+    suspicious_result = await db.execute(
+        with_period(
+            select(Tender)
+            .where(
+                Tender.risk_score > 60,
+                Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
+                Tender.amount >= min_amount,
+                not_reporting,
+            )
+        )
+        .order_by(desc(Tender.risk_score), desc(Tender.amount))
         .limit(40)
     )
-    suspicious_tenders = [
-        _tender_to_response(t)
-        for t in _dedupe_tenders(suspicious_result.scalars().all(), limit=10)
-    ]
+    suspicious_completed = _top_by_attention(suspicious_result.scalars().all(), limit=10)
 
-    # Топ підозрілі АКТИВНІ тендери (ще відкриті: active.*)
-    active_result = await db.execute(
-        select(Tender)
-        .where(
-            Tender.risk_score > 60,
-            Tender.status.like("active%"),
+    # Fallback: якщо з risk > 60 нікого немає - показуємо кандидатів
+    # із середньо-високим індексом (risk >= 40), поріг суми зберігаємо
+    if not suspicious_completed:
+        fallback_result = await db.execute(
+            with_period(
+                select(Tender)
+                .where(
+                    Tender.risk_score >= settings.dashboard_suspicious_fallback_risk,
+                    Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
+                    Tender.amount >= min_amount,
+                    not_reporting,
+                )
+            )
+            .order_by(desc(Tender.risk_score), desc(Tender.amount))
+            .limit(40)
         )
-        .order_by(desc(Tender.risk_score))
+        suspicious_completed = _top_by_attention(fallback_result.scalars().all(), limit=10)
+
+    suspicious_tenders = [_tender_to_response(t) for t in suspicious_completed]
+
+    # Топ підозрілі АКТИВНІ тендери (ще відкриті: active.*).
+    # Поріг ризику нижчий (50), бо активні тендери часто ще не повністю
+    # оброблені AI-скорингом і risk_score > 60 давав майже порожній список
+    active_result = await db.execute(
+        with_period(
+            select(Tender)
+            .where(
+                Tender.risk_score >= settings.dashboard_active_risk_min,
+                Tender.status.like("active%"),
+                not_reporting,
+            )
+        )
+        .order_by(desc(Tender.risk_score), desc(Tender.amount))
         .limit(40)
     )
     active_suspicious_tenders = [
         _tender_to_response(t)
-        for t in _dedupe_tenders(active_result.scalars().all(), limit=10)
+        for t in _top_by_attention(active_result.scalars().all(), limit=10)
     ]
 
     # Останні тендери (без візуальних дублів)
     recent_result = await db.execute(
-        select(Tender).order_by(desc(Tender.created_at)).limit(40)
+        with_period(select(Tender)).order_by(desc(Tender.created_at)).limit(40)
     )
     recent_tenders = [
         _tender_to_response(t)
         for t in _dedupe_tenders(recent_result.scalars().all(), limit=10)
     ]
+
+    # Час останнього оновлення даних = остання зміна тендера при синхронізації
+    last_updated = (await db.execute(
+        select(func.max(Tender.updated_at))
+    )).scalar()
 
     return DashboardResponse(
         kpi=kpi,
@@ -154,4 +243,5 @@ async def get_dashboard(db: AsyncSession = Depends(get_db)):
         suspicious_tenders=suspicious_tenders,
         active_suspicious_tenders=active_suspicious_tenders,
         recent_tenders=recent_tenders,
+        last_updated=last_updated,
     )

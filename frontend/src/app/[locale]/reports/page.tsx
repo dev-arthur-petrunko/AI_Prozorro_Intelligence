@@ -89,7 +89,7 @@ export default function ReportsPage() {
                 {report.suspicious_tenders.map((tender) => (
                   <div key={tender.id} className="flex items-center justify-between rounded-md border border-border p-3">
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium">{tender.title}</p>
+                      <p className="truncate text-sm font-medium" title={tender.title}>{tender.title}</p>
                       <p className="text-xs text-muted-foreground">
                         {tender.amount ? `${formatAmount(tender.amount)} ${tender.currency}` : "—"}
                         {tender.region && ` · ${tender.region}`}
