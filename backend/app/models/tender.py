@@ -18,7 +18,7 @@ class Tender(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     prozorro_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
-    title: Mapped[str] = mapped_column(String(512), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(64), nullable=False, default="active")
     cpv_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
