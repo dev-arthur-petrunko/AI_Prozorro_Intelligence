@@ -91,6 +91,15 @@ class GroqRateLimiter:
                 return self.max_per_day
             return max(0, self.max_per_day - self._daily_count)
 
+    def mark_exhausted(self) -> None:
+        """
+        Позначити денний ліміт вичерпаним (напр., Groq повернув 429 по токенах),
+        щоб пакет не бомбардував API марними запитами до кінця дня.
+        """
+        with self._lock:
+            self._day = date.today()
+            self._daily_count = self.max_per_day
+
 
 rate_limiter = GroqRateLimiter(
     max_per_minute=settings.groq_max_requests_per_minute,
@@ -125,6 +134,13 @@ async def generate_ai_explanation(
     category_avg: Optional[float] = None,
     category_count: int = 0,
     price_examples: Optional[list] = None,
+    procurement_method: Optional[str] = None,
+    final_amount: Optional[float] = None,
+    winner_total_wins: int = 0,
+    winner_wins_with_buyer: int = 0,
+    buyer_tenders_count: int = 0,
+    buyer_avg_participants: Optional[float] = None,
+    buyer_winners: Optional[list] = None,
 ) -> Optional[str]:
     """
     Згенерувати структурований аналітичний AI-коментар щодо ризиків тендера через Groq.
@@ -148,6 +164,18 @@ async def generate_ai_explanation(
         data_lines.append(f"Номер тендеру: {prozorro_id}")
     data_lines.append(f"Предмет закупівлі: {tender_title}")
     data_lines.append(f"Очікувана вартість: {tender_amount:,.0f} {currency}")
+    if final_amount:
+        reduction = ((tender_amount - final_amount) / tender_amount * 100) if tender_amount else 0
+        data_lines.append(
+            f"Фінальна ціна переможця (award): {final_amount:,.0f} {currency} "
+            f"(зниження від очікуваної: {reduction:.1f}%)"
+        )
+    if procurement_method:
+        data_lines.append(
+            f"Тип процедури (procurementMethodType): {procurement_method}"
+            + (" - пряма закупівля/звіт про договір, один учасник тут є нормою закону"
+               if procurement_method == "reporting" else "")
+        )
     if buyer_name:
         data_lines.append(f"Замовник: {buyer_name}")
     if winner_name:
@@ -163,6 +191,24 @@ async def generate_ai_explanation(
         data_lines.append(f"Дата публікації: {published_date}")
     if end_date:
         data_lines.append(f"Кінцевий строк подання: {end_date}")
+
+    # Історія переможця та профіль замовника (критерії 5, 8, 9).
+    # Дані охоплюють лише тендери в базі системи (ковзне вікно ~90 днів)
+    if winner_name and winner_total_wins:
+        data_lines.append(
+            f"Історія переможця в базі системи: всього перемог - {winner_total_wins}, "
+            f"з них у цього замовника - {winner_wins_with_buyer}"
+        )
+    if buyer_name and buyer_tenders_count:
+        avg_p = f", середня кількість учасників: {buyer_avg_participants:.1f}" if buyer_avg_participants else ""
+        data_lines.append(
+            f"Профіль замовника в базі системи: {buyer_tenders_count} тендерів{avg_p}"
+        )
+    if buyer_winners:
+        winners_str = ", ".join([f"{name[:60]} - {wins}" for name, wins in buyer_winners])
+        data_lines.append(
+            f"Розподіл перемог серед постачальників цього замовника (топ, база системи): {winners_str}"
+        )
 
     # Порівняльні дані цін по категорії (для критерію "Ціна")
     if category_avg and category_count:
@@ -202,6 +248,8 @@ async def generate_ai_explanation(
 - Коротке пояснення (1-2 речення), чому саме
 
 ВАЖЛИВО: якщо для пункту немає даних у наданій інформації — чесно вкажи "недостатньо даних" і НЕ вигадуй факти. Спирайся лише на надані дані та спрацьовані фактори Risk Engine.
+Для критеріїв 5, 8 і 9 використовуй надані "Історія переможця", "Профіль замовника" та "Розподіл перемог" — але зазначай, що ці дані охоплюють лише тендери в базі системи (останні ~90 днів), а не всю історію Prozorro.
+Дані про скарги в АМКУ та повторні публікації після скасування система не збирає — для критеріїв 6 і 7 очікувано буде "недостатньо даних", якщо статус тендера не cancelled.
 
 У ФІНАЛІ обов'язково додай:
 - Загальний індекс ризику (за шкалою 1–10)
@@ -238,5 +286,12 @@ async def generate_ai_explanation(
         return response.choices[0].message.content.strip() + DISCLAIMER
 
     except Exception as e:
-        logger.error(f"Помилка Groq API: {e}")
+        err_text = str(e)
+        # Вичерпано денний ліміт токенів Groq (TPD) - зупиняємо подальші
+        # запити до кінця дня, інакше кожен тендер у пакеті б'є в 429
+        if "rate_limit_exceeded" in err_text and ("per day" in err_text or "TPD" in err_text):
+            rate_limiter.mark_exhausted()
+            logger.warning("Groq: денний ліміт токенів вичерпано - AI-коментарі відкладено")
+        else:
+            logger.error(f"Помилка Groq API: {e}")
         return None

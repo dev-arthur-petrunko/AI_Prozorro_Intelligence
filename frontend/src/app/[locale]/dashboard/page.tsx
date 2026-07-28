@@ -148,9 +148,10 @@ function SuspiciousTable({
                           <TooltipTrigger className="block max-w-[250px] cursor-help truncate text-left text-xs text-muted-foreground">
                             {tender.ai_analysis}
                           </TooltipTrigger>
+                          {/* Широка панель з прокруткою, щоб коментар читався повністю */}
                           <TooltipContent
                             side="left"
-                            className="max-h-96 max-w-md overflow-y-auto whitespace-pre-line text-left text-xs leading-relaxed"
+                            className="max-h-[75vh] w-[min(42rem,90vw)] max-w-none overflow-y-auto whitespace-pre-line text-left text-xs leading-relaxed"
                           >
                             {tender.ai_analysis}
                           </TooltipContent>

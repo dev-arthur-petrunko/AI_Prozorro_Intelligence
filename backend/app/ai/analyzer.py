@@ -38,12 +38,46 @@ async def analyze_single_tender(tender: Tender, session: AsyncSession) -> None:
         # Додатковий контекст для глибшого аналізу
         buyer_name = None
         winner_name = None
+        buyer_tenders_count = 0
+        buyer_avg_participants = None
         if tender.buyer_id:
             buyer = await session.get(Buyer, tender.buyer_id)
-            buyer_name = buyer.name if buyer else None
+            if buyer:
+                buyer_name = buyer.name
+                buyer_tenders_count = buyer.tenders_count or 0
+                buyer_avg_participants = buyer.avg_participants
         if tender.winner_id:
             winner = await session.get(Company, tender.winner_id)
             winner_name = winner.name if winner else None
+
+        # Історія переможця: скільки разів він вигравав у ЦЬОГО замовника
+        # та скільки перемог має загалом у базі (критерій 5)
+        winner_wins_with_buyer = 0
+        winner_total_wins = 0
+        if tender.winner_id:
+            winner_total_wins = (await session.execute(
+                select(func.count(Tender.id)).where(Tender.winner_id == tender.winner_id)
+            )).scalar() or 0
+            if tender.buyer_id:
+                winner_wins_with_buyer = (await session.execute(
+                    select(func.count(Tender.id)).where(
+                        Tender.buyer_id == tender.buyer_id,
+                        Tender.winner_id == tender.winner_id,
+                    )
+                )).scalar() or 0
+
+        # Розподіл перемог серед постачальників цього замовника (критерії 8, 9)
+        buyer_winners = []
+        if tender.buyer_id:
+            dist = (await session.execute(
+                select(Company.name, func.count(Tender.id).label("wins"))
+                .join(Tender, Tender.winner_id == Company.id)
+                .where(Tender.buyer_id == tender.buyer_id)
+                .group_by(Company.name)
+                .order_by(func.count(Tender.id).desc())
+                .limit(5)
+            )).all()
+            buyer_winners = [(row[0], int(row[1])) for row in dist]
 
         # Порівняльні дані цін по категорії CPV (для аналізу критерію "Ціна")
         category_avg = None
@@ -92,6 +126,13 @@ async def analyze_single_tender(tender: Tender, session: AsyncSession) -> None:
             category_avg=category_avg,
             category_count=category_count,
             price_examples=price_examples,
+            procurement_method=tender.procurement_method,
+            final_amount=tender.final_amount,
+            winner_total_wins=winner_total_wins,
+            winner_wins_with_buyer=winner_wins_with_buyer,
+            buyer_tenders_count=buyer_tenders_count,
+            buyer_avg_participants=buyer_avg_participants,
+            buyer_winners=buyer_winners,
         )
         if explanation:
             tender.ai_analysis = explanation
