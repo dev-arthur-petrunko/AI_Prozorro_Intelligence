@@ -76,7 +76,10 @@ export function ProcurementChart({
   }));
 
   const hasReports = chartData.some((p) => p.reports > 0);
-  const hasHighRisk = !isAmount && chartData.some((p) => p.highRisk > 0);
+  // Червону лінію показуємо завжди в режимі кількості:
+  // плоский нуль - теж інформація ("тендерів з високим індексом немає"),
+  // а прихована серія виглядає як поломка графіка
+  const showHighRisk = !isAmount;
 
   const tendersName = competitiveLabel ?? "tenders";
   const reportsName = reportingLabel ?? "reports";
@@ -174,7 +177,7 @@ export function ProcurementChart({
                 activeDot={{ r: 5, fill: "#fbbf24" }}
               />
             )}
-            {hasHighRisk && (
+            {showHighRisk && (
               <Line
                 type="monotone"
                 dataKey="highRisk"
