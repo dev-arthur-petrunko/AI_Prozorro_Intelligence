@@ -5,6 +5,7 @@ AI Prozorro Intelligence - Groq AI клієнт.
 
 import asyncio
 import logging
+import re
 import threading
 import time
 from collections import deque
@@ -112,8 +113,20 @@ def get_groq_client() -> Optional[AsyncGroq]:
     if not settings.groq_api_key:
         logger.warning("GROQ_API_KEY не налаштований, AI аналіз вимкнений")
         return None
-    # max_retries=1: ретраї SDK теж рахуються у ліміт 30 запитів/хв
-    return AsyncGroq(api_key=settings.groq_api_key, max_retries=1)
+    # max_retries=0: ретраї робимо самі з урахуванням лімітів токенів (TPM/TPD)
+    return AsyncGroq(api_key=settings.groq_api_key, max_retries=0)
+
+
+def _parse_retry_after_seconds(error_text: str) -> Optional[float]:
+    """
+    Дістати час очікування з повідомлення Groq 429:
+    "Please try again in 7.66s" або "in 1m2.5s".
+    """
+    match = re.search(r"try again in (?:(\d+)m)?([\d.]+)s", error_text)
+    if not match:
+        return None
+    minutes = int(match.group(1)) if match.group(1) else 0
+    return minutes * 60 + float(match.group(2))
 
 
 async def generate_ai_explanation(
@@ -262,36 +275,52 @@ async def generate_ai_explanation(
 Дані тендеру:
 {data_text}"""
 
-    try:
-        # Дотримання лімітів Groq: 30 запитів/хв, 1000 запитів/день
+    # До 3 спроб: ліміт токенів за хвилину (TPM) - тимчасовий,
+    # чекаємо вказаний Groq час і повторюємо
+    for attempt in range(3):
+        # Дотримання лімітів Groq: запити/хв та денна квота
         if not await rate_limiter.acquire():
             return None
 
-        response = await client.chat.completions.create(
-            model=settings.groq_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ти — досвідчений аналітик державних закупівель України. Твої аналізи структуровані, об'єктивні, обережні у формулюваннях та спираються лише на надані дані.",
-                },
-                {
-                    "role": "user",
-                    "content": prompt,
-                },
-            ],
-            temperature=0.4,
-            max_tokens=1000,
-        )
+        try:
+            response = await client.chat.completions.create(
+                model=settings.groq_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Ти — досвідчений аналітик державних закупівель України. Твої аналізи структуровані, об'єктивні, обережні у формулюваннях та спираються лише на надані дані.",
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    },
+                ],
+                temperature=0.4,
+                max_tokens=1000,
+            )
 
-        return response.choices[0].message.content.strip() + DISCLAIMER
+            return response.choices[0].message.content.strip() + DISCLAIMER
 
-    except Exception as e:
-        err_text = str(e)
-        # Вичерпано денний ліміт токенів Groq (TPD) - зупиняємо подальші
-        # запити до кінця дня, інакше кожен тендер у пакеті б'є в 429
-        if "rate_limit_exceeded" in err_text and ("per day" in err_text or "TPD" in err_text):
-            rate_limiter.mark_exhausted()
-            logger.warning("Groq: денний ліміт токенів вичерпано - AI-коментарі відкладено")
-        else:
+        except Exception as e:
+            err_text = str(e)
+            if "rate_limit_exceeded" in err_text:
+                # Вичерпано денний ліміт (запити RPD або токени TPD) - зупиняємо
+                # подальші запити до кінця дня, інакше кожен тендер б'є в 429
+                if "per day" in err_text or "TPD" in err_text or "RPD" in err_text:
+                    rate_limiter.mark_exhausted()
+                    logger.warning("Groq: денний ліміт вичерпано - AI-коментарі відкладено до завтра")
+                    return None
+                # Ліміт токенів за хвилину (TPM) - чекаємо і повторюємо
+                wait = _parse_retry_after_seconds(err_text) or 20.0
+                logger.info(
+                    f"Groq: ліміт токенів/хв (TPM), пауза {wait:.0f} сек "
+                    f"(спроба {attempt + 1}/3)"
+                )
+                await asyncio.sleep(wait + 1.0)
+                continue
+
             logger.error(f"Помилка Groq API: {e}")
-        return None
+            return None
+
+    logger.warning("Groq: не вдалося згенерувати коментар за 3 спроби (TPM)")
+    return None

@@ -99,6 +99,37 @@ def attention_priority(risk_score: Optional[int], amount: Optional[float]) -> fl
     return score * math.log10(amt)
 
 
+def dedupe_tenders(tenders, limit: int):
+    """
+    Прибрати візуальні дублі: однакова назва + замовник + сума
+    (напр. серія однотипних закупівель) - залишаємо з найвищим ризиком.
+    """
+    seen = set()
+    unique = []
+    for t in tenders:
+        key = (t.title.strip().lower(), t.buyer_id, t.amount)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(t)
+        if len(unique) >= limit:
+            break
+    return unique
+
+
+def top_by_attention(tenders, limit: int):
+    """
+    Відсортувати кандидатів за пріоритетом уваги (risk_score x log10(сума))
+    і прибрати візуальні дублі. Спільна логіка топів дашборду та AI-аналізу.
+    """
+    ranked = sorted(
+        tenders,
+        key=lambda t: attention_priority(t.risk_score, t.amount),
+        reverse=True,
+    )
+    return dedupe_tenders(ranked, limit=limit)
+
+
 async def check_single_participant(tender: Tender) -> bool:
     """Перевірка: лише один учасник (лише для competitive)."""
     return tender.participants_count <= 1

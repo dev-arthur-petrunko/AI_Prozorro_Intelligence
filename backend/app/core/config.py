@@ -31,9 +31,15 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
     # Ліміти Groq API (безкоштовний тариф: 30 запитів/хв, 1000 запитів/день)
-    # Тримаємо запас, бо SDK робить ретраї при 429 (вони теж рахуються)
+    # Тримаємо запас, бо ретраї при 429 теж рахуються
     groq_max_requests_per_minute: int = 28
     groq_max_requests_per_day: int = 950
+    # Пауза між запитами до Groq: реальне вузьке місце безкоштовного тарифу -
+    # ліміт токенів за хвилину (TPM ~12K для llama-3.3-70b), один аналіз ~3K
+    # токенів => стійкий темп ~4 запити/хв
+    groq_request_pause_seconds: float = 15.0
+    # Ліміт фази скорингу (Risk Engine, без Groq) за один запуск
+    ai_scoring_batch_limit: int = 500
 
     # n8n
     n8n_webhook_url: str = ""

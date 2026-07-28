@@ -14,7 +14,7 @@ from app.core.dependencies import get_db
 from app.models.tender import Tender
 from app.models.company import Company
 from app.models.buyer import Buyer
-from app.ai.risk_engine import attention_priority
+from app.ai.risk_engine import top_by_attention, dedupe_tenders
 from app.schemas import (
     DashboardResponse, DashboardKPI, ChartDataPoint, TenderResponse
 )
@@ -48,35 +48,13 @@ def _tender_to_response(tender: Tender) -> TenderResponse:
 
 
 def _dedupe_tenders(tenders, limit: int):
-    """
-    Прибрати візуальні дублі: однакова назва + замовник + сума
-    (напр. серія однотипних закупівель) - залишаємо з найвищим ризиком.
-    """
-    seen = set()
-    unique = []
-    for t in tenders:
-        key = (t.title.strip().lower(), t.buyer_id, t.amount)
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(t)
-        if len(unique) >= limit:
-            break
-    return unique
+    """Прибрати візуальні дублі (спільна логіка у risk_engine)."""
+    return dedupe_tenders(tenders, limit=limit)
 
 
 def _top_by_attention(tenders, limit: int):
-    """
-    Відсортувати кандидатів за пріоритетом уваги (risk_score x log10(сума)),
-    щоб дрібні закупівлі з високим score не витісняли великі з середнім,
-    і прибрати візуальні дублі.
-    """
-    ranked = sorted(
-        tenders,
-        key=lambda t: attention_priority(t.risk_score, t.amount),
-        reverse=True,
-    )
-    return _dedupe_tenders(ranked, limit=limit)
+    """Топ за пріоритетом уваги (спільна логіка у risk_engine)."""
+    return top_by_attention(tenders, limit=limit)
 
 
 @router.get("", response_model=DashboardResponse)
