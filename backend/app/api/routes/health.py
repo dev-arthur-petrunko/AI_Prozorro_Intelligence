@@ -50,3 +50,24 @@ async def run_ai_analysis_now(force: bool = False, limit: int = 50):
     from app.ai.analyzer import run_ai_analysis_batch
     await run_ai_analysis_batch(force=force, limit=limit)
     return {"status": "ok", "message": "AI analysis completed", "force": force}
+
+
+@router.post("/admin/send-daily-report")
+async def send_daily_report_now(db: AsyncSession = Depends(get_db)):
+    """
+    Вручну сформувати та відправити щоденний звіт на n8n webhook.
+    Використовується для перевірки, що вебхук дійсно отримує дані.
+    """
+    from app.api.routes.reports import get_daily_report
+    from app.notifications.n8n_client import send_daily_report
+
+    if not settings.n8n_webhook_url:
+        return {"status": "error", "message": "N8N_WEBHOOK_URL не налаштовано"}
+
+    report = await get_daily_report(db=db)
+    delivered = await send_daily_report(report.model_dump(mode="json"))
+    return {
+        "status": "ok" if delivered else "failed",
+        "delivered": delivered,
+        "webhook_configured": True,
+    }

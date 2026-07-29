@@ -82,7 +82,7 @@ export function Sidebar() {
         {/* Footer */}
         <div className="border-t border-border px-6 py-4">
           <p className="text-xs text-muted-foreground">
-            v1.2.0 &middot; {tc("openSource")}
+            v1.4.5 &middot; {tc("openSource")}
           </p>
         </div>
       </div>

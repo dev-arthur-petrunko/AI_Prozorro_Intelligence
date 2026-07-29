@@ -134,7 +134,7 @@ export interface DashboardResponse {
 
 export interface AnalyticsResponse {
   categories: { cpv_code: string; name?: string | null; tenders_count: number; total_amount: number }[];
-  regions: { region: string; tenders_count: number; total_amount: number }[];
+  regions: { region: string; tenders_count: number; total_amount: number; contracted_amount: number }[];
   top_companies: CompanyResponse[];
   top_buyers: BuyerResponse[];
   price_dynamics: ChartDataPoint[];

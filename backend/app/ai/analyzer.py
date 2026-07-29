@@ -24,7 +24,7 @@ from app.models.company import Company
 from app.ai.risk_engine import analyze_tender_risk, top_by_attention, attention_priority
 from app.ai.groq_client import generate_ai_explanation, rate_limiter
 from app.core.config import settings
-from app.notifications.n8n_client import notify_suspicious_tender, SUSPICIOUS_NOTIFY_THRESHOLD
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +41,6 @@ async def score_tender(tender: Tender, session: AsyncSession) -> int:
     """
     risk_score, risk_factors_json = await analyze_tender_risk(tender, session)
 
-    # Сповіщаємо лише при ПЕРШОМУ перетині порогу, щоб повторний скоринг
-    # stale-тендерів не дублював сповіщення кожні 15 хвилин
-    was_below_threshold = (tender.risk_score or 0) <= SUSPICIOUS_NOTIFY_THRESHOLD
-
     tender.risk_score = risk_score
     tender.risk_factors = risk_factors_json
 
@@ -54,10 +50,6 @@ async def score_tender(tender: Tender, session: AsyncSession) -> int:
         tender.analysis_stale = False
 
     logger.debug(f"Tender {tender.prozorro_id}: risk_score={risk_score}")
-
-    # Миттєве сповіщення про підозрілий активний тендер (якщо умови виконані)
-    if was_below_threshold:
-        await notify_suspicious_tender(tender)
 
     return risk_score
 

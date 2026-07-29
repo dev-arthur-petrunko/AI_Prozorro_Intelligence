@@ -182,6 +182,9 @@ class RegionStat(BaseModel):
     region: str
     tenders_count: int = 0
     total_amount: float = 0.0
+    # Фактично законтрактована сума (final_amount переможців), на відміну
+    # від total_amount = оголошена очікувана вартість
+    contracted_amount: float = 0.0
 
 
 class AnalyticsResponse(BaseModel):

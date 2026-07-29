@@ -5,6 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SettingsPage() {
   const t = useTranslations("nav");
+  const s = useTranslations("settings");
+
+  const changelog = [
+    s("changelog1"),
+    s("changelog2"),
+    s("changelog3"),
+    s("changelog4"),
+    s("changelog5"),
+    s("changelog6"),
+    s("changelog7"),
+    s("changelog8"),
+  ];
 
   return (
     <div className="space-y-6">
@@ -12,19 +24,35 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">API Configuration</CardTitle>
+          <CardTitle className="text-base">{s("apiConfig")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Backend URL</span>
+              <span className="text-muted-foreground">{s("backendUrl")}</span>
               <code className="text-xs">{process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}</code>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Version</span>
-              <span>1.2.0</span>
+              <span className="text-muted-foreground">{s("version")}</span>
+              <span className="font-medium">1.4.5</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{s("whatsNew")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm">
+            {changelog.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="mt-0.5 text-primary">•</span>
+                <span className="text-muted-foreground">{item}</span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>

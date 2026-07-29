@@ -77,13 +77,16 @@ async def get_analytics(
     ]
     
     # Регіони (без ліміту - показуємо всі області України;
-    # відсіюємо записи з порожньою назвою регіону)
+    # відсіюємо записи з порожньою назвою регіону).
+    # total_amount = оголошена очікувана вартість; contracted_amount =
+    # фактично законтрактована ціна переможців (final_amount)
     reg_result = await db.execute(
         with_period(
             select(
                 Tender.region,
                 func.count(Tender.id).label("cnt"),
                 func.coalesce(func.sum(Tender.amount), 0).label("total"),
+                func.coalesce(func.sum(Tender.final_amount), 0).label("contracted"),
             )
             .where(Tender.region.isnot(None), Tender.region != "")
         )
@@ -91,7 +94,12 @@ async def get_analytics(
         .order_by(desc("cnt"))
     )
     regions = [
-        RegionStat(region=row[0], tenders_count=row[1], total_amount=float(row[2]))
+        RegionStat(
+            region=row[0],
+            tenders_count=row[1],
+            total_amount=float(row[2]),
+            contracted_amount=float(row[3]),
+        )
         for row in reg_result.all()
     ]
     

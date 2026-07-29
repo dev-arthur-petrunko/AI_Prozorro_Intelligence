@@ -44,8 +44,43 @@ function formatDateTime(dateStr: string | null): string {
 }
 
 type Metric = "count" | "amount";
+type AmountType = "announced" | "contracted";
 
 const PERIOD_OPTIONS = [7, 30, 90] as const;
+
+/** Перемикач між двома варіантами (загальний, для метрики та типу суми) */
+function SegmentToggle({
+  value,
+  left,
+  right,
+  onChange,
+}: {
+  value: string;
+  left: { key: string; label: string };
+  right: { key: string; label: string };
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex rounded-md border border-border text-xs">
+      <button
+        onClick={() => onChange(left.key)}
+        className={`rounded-l-md px-3 py-1.5 transition-colors ${
+          value === left.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {left.label}
+      </button>
+      <button
+        onClick={() => onChange(right.key)}
+        className={`rounded-r-md px-3 py-1.5 transition-colors ${
+          value === right.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {right.label}
+      </button>
+    </div>
+  );
+}
 
 /** Перемикач метрики графіків: кількість тендерів або сума в грн */
 function MetricToggle({
@@ -60,24 +95,12 @@ function MetricToggle({
   amountLabel: string;
 }) {
   return (
-    <div className="flex rounded-md border border-border text-xs">
-      <button
-        onClick={() => onChange("count")}
-        className={`rounded-l-md px-3 py-1.5 transition-colors ${
-          metric === "count" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        {countLabel}
-      </button>
-      <button
-        onClick={() => onChange("amount")}
-        className={`rounded-r-md px-3 py-1.5 transition-colors ${
-          metric === "amount" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        {amountLabel}
-      </button>
-    </div>
+    <SegmentToggle
+      value={metric}
+      left={{ key: "count", label: countLabel }}
+      right={{ key: "amount", label: amountLabel }}
+      onChange={(v) => onChange(v as Metric)}
+    />
   );
 }
 
@@ -86,6 +109,8 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   // Перемикач метрики графіків: кількість тендерів або сума в грн
   const [metric, setMetric] = useState<Metric>("count");
+  // Тип суми для регіонів: оголошена (очікувана) чи законтрактована (final)
+  const [amountType, setAmountType] = useState<AmountType>("announced");
   // Період: undefined = весь час
   const [days, setDays] = useState<number | undefined>(undefined);
 
@@ -102,6 +127,22 @@ export default function AnalyticsPage() {
       onChange={setMetric}
       countLabel={t("metricCount")}
       amountLabel={t("metricAmount")}
+    />
+  );
+
+  // Регіони: у режимі суми можна показати оголошену або законтрактовану вартість
+  const regionMetricKey =
+    metric === "count"
+      ? "tenders_count"
+      : amountType === "contracted"
+      ? "contracted_amount"
+      : "total_amount";
+  const amountTypeToggle = (
+    <SegmentToggle
+      value={amountType}
+      left={{ key: "announced", label: t("amountAnnounced") }}
+      right={{ key: "contracted", label: t("amountContracted") }}
+      onChange={(v) => setAmountType(v as AmountType)}
     />
   );
 
@@ -149,10 +190,13 @@ export default function AnalyticsPage() {
               <CardTitle className="text-base">
                 {t("allRegions")}
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  ({data?.regions.length ?? 0} • {metricLabel})
+                  ({data?.regions.length ?? 0} • {metric === "count" ? metricLabel : amountType === "contracted" ? t("amountContracted") : t("amountAnnounced")})
                 </span>
               </CardTitle>
-              {metricToggle}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {metric === "amount" && amountTypeToggle}
+                {metricToggle}
+              </div>
             </CardHeader>
             <CardContent>
               {/* Висота залежить від кількості регіонів, щоб усі бари вміщались */}
@@ -173,9 +217,9 @@ export default function AnalyticsPage() {
                       cursor={{ fill: "#8b949e", fillOpacity: 0.08 }}
                       formatter={(v) => [formatMetric(Number(v ?? 0)), metricLabel]}
                     />
-                    <Bar dataKey={metricKey} radius={[0, 4, 4, 0]}>
+                    <Bar dataKey={regionMetricKey} radius={[0, 4, 4, 0]}>
                       {/* Точні значення на барах */}
-                      <LabelList dataKey={metricKey} position="right" style={BAR_LABEL} formatter={(v) => formatMetric(Number(v))} />
+                      <LabelList dataKey={regionMetricKey} position="right" style={BAR_LABEL} formatter={(v) => formatMetric(Number(v))} />
                       {(data?.regions ?? []).map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}

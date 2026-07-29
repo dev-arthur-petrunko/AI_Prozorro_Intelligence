@@ -9,6 +9,20 @@
     "settings": "Settings",
     "legal": "Legal"
   },
+  "settings": {
+    "apiConfig": "API Configuration",
+    "backendUrl": "Backend URL",
+    "version": "Version",
+    "whatsNew": "What's new in v1.4.5",
+    "changelog1": "Procedure typing: competitive tenders, simplified procurement, negotiated procedures and contract reports are scored under different rules",
+    "changelog2": "New AI Risk Index factors: rotation of a stable participant pool, no price reduction under real competition, comparison with the 12-month CPV category median",
+    "changelog3": "AI analytical commentary across 9 criteria; re-analysis only when an unfinished tender receives new data",
+    "changelog4": "Dashboard: count ↔ amount toggle, chart brush zoom, attention-priority tops with dates and Prozorro links",
+    "changelog5": "Analytics: all regions of Ukraine with values on bars, DK 021:2015 code descriptions, 7/30/90-day period filter",
+    "changelog6": "New Legal page: data sources, legislative basis, legal disclaimer",
+    "changelog7": "Telegram notifications via n8n: reports at 10:00, 13:00, 16:00 and 19:00 Kyiv time",
+    "changelog8": "Cloud deployment: Neon + Render + Vercel, auto-deploy from GitHub, 'Data updated' label on every page"
+  },
   "dashboard": {
     "title": "AI Prozorro Intelligence",
     "subtitle": "Public Procurement Monitoring",
@@ -97,6 +111,8 @@
     "top10Categories": "Top 10 Categories",
     "metricCount": "Tenders count",
     "metricAmount": "Amount, UAH",
+    "amountAnnounced": "Announced",
+    "amountContracted": "Contracted",
     "category": "Category",
     "dataUpdated": "Data updated",
     "period": "Period",

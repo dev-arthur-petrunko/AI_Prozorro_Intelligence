@@ -1,44 +1,28 @@
 {
-  "name": "AI Prozorro Intelligence - Daily Report",
+  "name": "AI Prozorro Intelligence - Telegram Notifications",
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "hours",
-              "hoursInterval": 24,
-              "triggerAtHour": 20
-            }
-          ]
-        }
-      },
-      "id": "cron-trigger",
-      "name": "Daily at 20:00",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1,
-      "position": [250, 300]
-    },
-    {
-      "parameters": {
-        "url": "={{$env.BACKEND_URL || 'http://localhost:8000'}}/daily-report",
+        "httpMethod": "POST",
+        "path": "f8e870ef-2d1b-4e03-8c82-bce6ee024243",
         "options": {}
       },
-      "id": "http-request",
-      "name": "Get Daily Report",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [450, 300]
+      "id": "webhook-trigger",
+      "name": "Webhook (from backend)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "f8e870ef-2d1b-4e03-8c82-bce6ee024243"
     },
     {
       "parameters": {
-        "jsCode": "const report = $input.first().json;\n\nconst formatAmount = (amount) => {\n  if (amount >= 1000000000) return `${(amount / 1000000000).toFixed(1)} млрд грн`;\n  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)} млн грн`;\n  if (amount >= 1000) return `${(amount / 1000).toFixed(1)} тис грн`;\n  return `${amount} грн`;\n};\n\nconst message = `🇺🇦 *AI Prozorro Intelligence*\n\n📅 ${report.date}\n\n📦 Нових закупівель: *${report.total_new_tenders}*\n🚨 З високим індексом ризику (AI): *${report.suspicious_count}*\n🔴 Найвищий індекс ризику: *${report.highest_risk_score}*\n💰 Найбільша закупівля: *${formatAmount(report.largest_tender_amount)}*\n📈 Топ категорія: ${report.top_category || '—'}\n📍 Топ регіон: ${report.top_region || '—'}\n\n_Індекс ризику (AI) — попередня аналітична оцінка на основі відкритих даних Prozorro, не є висновком про порушення законодавства._\n\n🔗 [Дашборд](${$env.FRONTEND_URL || 'https://your-app.vercel.app'}/uk/dashboard)`;\n\nreturn [{ json: { message } }];"
+        "jsCode": "// Бекенд надсилає POST { type, report } або { type, tender }.\n// n8n Webhook кладе тіло у .body (з запасом читаємо і верхній рівень).\nconst input = $input.first().json;\nconst data = input.body || input;\nconst type = data.type;\n\nconst formatAmount = (a) => {\n  if (a == null) return '—';\n  if (a >= 1000000000) return `${(a / 1000000000).toFixed(1)} млрд грн`;\n  if (a >= 1000000) return `${(a / 1000000).toFixed(1)} млн грн`;\n  if (a >= 1000) return `${(a / 1000).toFixed(1)} тис грн`;\n  return `${a} грн`;\n};\n\nconst frontend = $env.FRONTEND_URL || 'https://your-app.vercel.app';\nlet message;\n\nif (type === 'suspicious_tender') {\n  const t = data.tender || {};\n  message = `🚨 *Активний тендер з високим індексом ризику*\\n\\n` +\n    `📋 ${t.title || '—'}\\n` +\n    `🔴 Індекс ризику (AI): *${t.risk_score ?? '—'}*\\n` +\n    `💰 Сума: *${formatAmount(t.amount)}*\\n` +\n    `👥 Учасників: ${t.participants_count ?? '—'}\\n` +\n    `📍 Регіон: ${t.region || '—'}\\n\\n` +\n    `_Індекс ризику (AI) — попередня аналітична оцінка на основі відкритих даних Prozorro, не є висновком про порушення законодавства._\\n\\n` +\n    `🔗 [Відкрити в Prozorro](${t.url || 'https://prozorro.gov.ua'})`;\n} else {\n  // daily_report\n  const r = data.report || {};\n  message = `🇺🇦 *AI Prozorro Intelligence*\\n\\n` +\n    `📅 ${r.date || '—'}\\n\\n` +\n    `📦 Нових закупівель: *${r.total_new_tenders ?? 0}*\\n` +\n    `🚨 З високим індексом ризику (AI): *${r.suspicious_count ?? 0}*\\n` +\n    `🔴 Найвищий індекс ризику: *${r.highest_risk_score ?? 0}*\\n` +\n    `💰 Найбільша закупівля: *${formatAmount(r.largest_tender_amount)}*\\n` +\n    `📈 Топ категорія: ${r.top_category || '—'}\\n` +\n    `📍 Топ регіон: ${r.top_region || '—'}\\n\\n` +\n    `_Індекс ризику (AI) — попередня аналітична оцінка на основі відкритих даних Prozorro, не є висновком про порушення законодавства._\\n\\n` +\n    `🔗 [Дашборд](${frontend}/uk/dashboard)`;\n}\n\nreturn [{ json: { message } }];"
       },
       "id": "format-message",
       "name": "Format Telegram Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [650, 300]
+      "position": [500, 300]
     },
     {
       "parameters": {
@@ -53,7 +37,7 @@
       "name": "Send to Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
-      "position": [850, 300],
+      "position": [750, 300],
       "credentials": {
         "telegramApi": {
           "id": "1",
@@ -63,18 +47,7 @@
     }
   ],
   "connections": {
-    "Daily at 20:00": {
-      "main": [
-        [
-          {
-            "node": "Get Daily Report",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Daily Report": {
+    "Webhook (from backend)": {
       "main": [
         [
           {
