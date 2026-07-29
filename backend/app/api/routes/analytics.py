@@ -36,7 +36,7 @@ def _exclude_anonymized(query):
 
 @router.get("", response_model=AnalyticsResponse)
 async def get_analytics(
-    days: Optional[int] = Query(None, ge=1, le=365, description="Період у днях (7/30/90), без значення - за весь час"),
+    days: Optional[int] = Query(None, ge=1, le=365, description="Період у днях (7/30/90/180), без значення - за весь час"),
     db: AsyncSession = Depends(get_db),
 ):
     """Отримати аналітику по категоріях, регіонах, компаніях та замовниках."""

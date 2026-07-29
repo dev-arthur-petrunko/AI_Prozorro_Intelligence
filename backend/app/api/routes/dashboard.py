@@ -59,7 +59,7 @@ def _top_by_attention(tenders, limit: int):
 
 @router.get("", response_model=DashboardResponse)
 async def get_dashboard(
-    days: Optional[int] = Query(None, ge=1, le=365, description="Період у днях (7/30/90), без значення - за весь час"),
+    days: Optional[int] = Query(None, ge=1, le=365, description="Період у днях (7/30/90/180), без значення - за весь час"),
     db: AsyncSession = Depends(get_db),
 ):
     """Отримати дані для головної сторінки дашборду."""

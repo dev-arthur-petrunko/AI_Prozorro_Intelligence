@@ -307,13 +307,13 @@ async def _top_candidates_for_period(session: AsyncSession, period_start) -> lis
 async def _select_top_tenders(session: AsyncSession) -> list:
     """
     Відібрати тендери, які реально показуються у топах дашборду за БУДЬ-ЯКОГО
-    вибору періоду користувачем: за весь час, 7, 30 та 90 днів.
+    вибору періоду користувачем: за весь час, 7, 30, 90 та 180 днів.
     Дзеркалить логіку dashboard.py: ті самі пороги, фільтри та ранжування.
     Денна квота Groq мала (~30-35 коментарів) - витрачаємо її лише на те,
     що бачить користувач.
     """
     candidates = []
-    for days in (None, 7, 30, 90):
+    for days in (None, 7, 30, 90, 180):
         period_start = None
         if days:
             period_start = datetime.combine(

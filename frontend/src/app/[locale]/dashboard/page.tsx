@@ -178,7 +178,7 @@ function SuspiciousTable({
   );
 }
 
-const PERIOD_OPTIONS = [7, 30, 90] as const;
+const PERIOD_OPTIONS = [7, 30, 90, 180] as const;
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");

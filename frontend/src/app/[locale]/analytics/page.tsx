@@ -46,7 +46,7 @@ function formatDateTime(dateStr: string | null): string {
 type Metric = "count" | "amount";
 type AmountType = "announced" | "contracted";
 
-const PERIOD_OPTIONS = [7, 30, 90] as const;
+const PERIOD_OPTIONS = [7, 30, 90, 180] as const;
 
 /** Перемикач між двома варіантами (загальний, для метрики та типу суми) */
 function SegmentToggle({

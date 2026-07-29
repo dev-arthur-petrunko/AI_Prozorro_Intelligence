@@ -52,6 +52,7 @@
     "period7": "7 days",
     "period30": "30 days",
     "period90": "90 days",
+    "period180": "6 months",
     "periodAll": "All time",
     "openInProzorro": "Open in Prozorro",
     "chartCoverageNote": "The chart shows only tenders stored in the system database. \"Contract reports\" are direct awards (reporting) that Prozorro publishes post-factum in batches, so their curve may spike on sync days."
@@ -119,6 +120,7 @@
     "period7": "7 days",
     "period30": "30 days",
     "period90": "90 days",
+    "period180": "6 months",
     "periodAll": "All time"
   },
   "reports": {
