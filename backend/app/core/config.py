@@ -66,7 +66,9 @@ class Settings(BaseSettings):
 
     # Синхронізація
     initial_import_days: int = 30
-    data_retention_days: int = 90
+    # Вікно збереження даних ~6 місяців: історія переможців/замовників
+    # для AI-аналізу охоплює півроку
+    data_retention_days: int = 180
     sync_interval_minutes: int = 30
 
     # Сервер
