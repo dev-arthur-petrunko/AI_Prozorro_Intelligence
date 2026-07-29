@@ -106,6 +106,9 @@ async def import_tender(session: AsyncSession, normalized_data: dict) -> bool:
         amount=normalized_data.get("amount"),
         final_amount=normalized_data.get("final_amount"),
         currency=normalized_data.get("currency", "UAH"),
+        quantity=normalized_data.get("quantity"),
+        unit_name=normalized_data.get("unit_name"),
+        unit_price=normalized_data.get("unit_price"),
         participants_count=normalized_data.get("participants_count", 0),
         buyer_id=buyer_id,
         winner_id=winner_id,
@@ -151,6 +154,11 @@ async def _update_existing_tender(session: AsyncSession, existing: Tender, norma
     existing.participants_count = new_participants
     if not existing.procurement_method:
         existing.procurement_method = normalized_data.get("procurement_method")
+    # Дозаповнення кількості/ціни за одиницю (нові поля для старих записів)
+    if existing.quantity is None and normalized_data.get("quantity") is not None:
+        existing.quantity = normalized_data.get("quantity")
+        existing.unit_name = normalized_data.get("unit_name")
+        existing.unit_price = normalized_data.get("unit_price")
     if new_final is not None:
         existing.final_amount = new_final
     existing.updated_at = datetime.utcnow()

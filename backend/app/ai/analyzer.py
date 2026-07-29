@@ -145,6 +145,25 @@ async def generate_tender_explanation(tender: Tender, session: AsyncSession) -> 
             )
             price_examples = [(row[0], float(row[1])) for row in examples_result.all()]
 
+    # Медіана цін за одиницю по категорії (та ж CPV + та ж одиниця виміру)
+    unit_price_median = None
+    unit_price_count = 0
+    if tender.unit_price and tender.cpv_code and tender.unit_name:
+        unit_stats = (await session.execute(
+            select(
+                func.percentile_cont(0.5).within_group(Tender.unit_price),
+                func.count(Tender.id),
+            ).where(
+                Tender.cpv_code == tender.cpv_code,
+                Tender.unit_name == tender.unit_name,
+                Tender.unit_price.isnot(None),
+                Tender.id != tender.id,
+            )
+        )).first()
+        if unit_stats and unit_stats[0]:
+            unit_price_median = float(unit_stats[0])
+            unit_price_count = int(unit_stats[1])
+
     explanation = await generate_ai_explanation(
         tender_title=tender.title,
         tender_amount=tender.amount or 0,
@@ -163,6 +182,11 @@ async def generate_tender_explanation(tender: Tender, session: AsyncSession) -> 
         category_avg=category_avg,
         category_count=category_count,
         price_examples=price_examples,
+        quantity=tender.quantity,
+        unit_name=tender.unit_name,
+        unit_price=tender.unit_price,
+        unit_price_median=unit_price_median,
+        unit_price_count=unit_price_count,
         procurement_method=tender.procurement_method,
         final_amount=tender.final_amount,
         winner_total_wins=winner_total_wins,
@@ -233,12 +257,12 @@ async def _top_candidates_for_period(session: AsyncSession, period_start) -> lis
             return query.where(Tender.published_date >= period_start)
         return query
 
-    # Топ за індексом ризику - ЗАВЕРШЕНІ (risk > 60, fallback >= 40)
+    # Топ за індексом ризику - ЗАВЕРШЕНІ (високий індекс, fallback >= 40)
     completed = (await session.execute(
         with_period(
             select(Tender)
             .where(
-                Tender.risk_score > 60,
+                Tender.risk_score >= settings.high_risk_threshold,
                 Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
                 Tender.amount >= min_amount,
                 not_reporting,

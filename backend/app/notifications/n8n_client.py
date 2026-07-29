@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 
 KYIV_TZ = ZoneInfo("Europe/Kyiv")
 
-# Порог risk_score для миттєвого сповіщення про підозрілий тендер
-SUSPICIOUS_NOTIFY_THRESHOLD = 60
+# Поріг risk_score для миттєвого сповіщення: сповіщаємо від "високого"
+# індексу (>= high_risk_threshold), тому поріг = high_risk_threshold - 1
+SUSPICIOUS_NOTIFY_THRESHOLD = settings.high_risk_threshold - 1
 
 # Часове вікно для миттєвих сповіщень (за київським часом)
 NOTIFY_HOUR_START = 9

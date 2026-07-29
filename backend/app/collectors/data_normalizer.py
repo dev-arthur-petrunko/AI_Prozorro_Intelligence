@@ -100,6 +100,26 @@ def extract_cpv(tender_data: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def extract_quantity(tender_data: Dict[str, Any]) -> Tuple[Optional[float], Optional[str]]:
+    """
+    Витягнути кількість та одиницю виміру.
+    Лише для тендерів з ОДНИМ item: коли позицій декілька, загальну суму
+    не можна коректно розділити між ними (API не дає ціни по позиціях).
+    """
+    items = tender_data.get("items", [])
+    if len(items) != 1:
+        return None, None
+    quantity = items[0].get("quantity")
+    unit = items[0].get("unit") or {}
+    try:
+        quantity = float(quantity)
+    except (TypeError, ValueError):
+        return None, None
+    if quantity <= 0:
+        return None, None
+    return quantity, unit.get("name")
+
+
 def extract_region(tender_data: Dict[str, Any]) -> Optional[str]:
     """Витягнути регіон з даних тендера."""
     items = tender_data.get("items", [])
@@ -126,6 +146,8 @@ def normalize_tender(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         Нормалізований словник для створення моделі
     """
     amount, currency = extract_amount(raw_data)
+    quantity, unit_name = extract_quantity(raw_data)
+    unit_price = (amount / quantity) if (amount and quantity) else None
     
     return {
         "prozorro_id": raw_data.get("id", ""),
@@ -140,6 +162,9 @@ def normalize_tender(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         "amount": amount,
         "final_amount": extract_final_amount(raw_data),
         "currency": currency,
+        "quantity": quantity,
+        "unit_name": unit_name,
+        "unit_price": unit_price,
         "participants_count": count_participants(raw_data),
         "buyer_info": extract_buyer_info(raw_data),
         "winner_info": extract_winner_info(raw_data),

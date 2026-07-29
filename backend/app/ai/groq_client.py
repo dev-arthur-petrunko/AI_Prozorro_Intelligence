@@ -147,6 +147,11 @@ async def generate_ai_explanation(
     category_avg: Optional[float] = None,
     category_count: int = 0,
     price_examples: Optional[list] = None,
+    quantity: Optional[float] = None,
+    unit_name: Optional[str] = None,
+    unit_price: Optional[float] = None,
+    unit_price_median: Optional[float] = None,
+    unit_price_count: int = 0,
     procurement_method: Optional[str] = None,
     final_amount: Optional[float] = None,
     winner_total_wins: int = 0,
@@ -177,6 +182,20 @@ async def generate_ai_explanation(
         data_lines.append(f"Номер тендеру: {prozorro_id}")
     data_lines.append(f"Предмет закупівлі: {tender_title}")
     data_lines.append(f"Очікувана вартість: {tender_amount:,.0f} {currency}")
+    # Кількість та ціна за одиницю (якщо в тендері одна позиція)
+    if quantity and unit_price:
+        unit_label = unit_name or "од."
+        data_lines.append(
+            f"Кількість: {quantity:,.0f} {unit_label}, "
+            f"ціна за одиницю: {unit_price:,.2f} {currency}"
+        )
+        if unit_price_median:
+            unit_dev = (unit_price - unit_price_median) / unit_price_median * 100
+            data_lines.append(
+                f"Медіана ціни за одиницю в категорії {cpv_code} ({unit_label}): "
+                f"{unit_price_median:,.2f} {currency} (на основі {unit_price_count} закупівель у базі). "
+                f"Відхилення ціни за одиницю цього тендера: {unit_dev:+.0f}%"
+            )
     if final_amount:
         reduction = ((tender_amount - final_amount) / tender_amount * 100) if tender_amount else 0
         data_lines.append(
@@ -248,7 +267,7 @@ async def generate_ai_explanation(
 
 1. Умови участі — чи є ознаки штучно звужених вимог, які підходять лише одному постачальнику (специфічні бренди, надто вузькі параметри, нетипові сертифікати).
 2. Строки — чи достатньо часу було дано на подання пропозицій, чи не публікувався тендер у "незручний" час (свята, вихідні).
-3. Ціна — чи є суттєве відхилення очікуваної/переможної ціни від ринкової (завищення чи підозріло точний збіг з очікуваною вартістю). Якщо надано середню вартість по категорії та приклади цін інших тендерів — обов'язково порівняй з ними і наведи конкретні цифри у поясненні.
+3. Ціна — чи є суттєве відхилення очікуваної/переможної ціни від ринкової (завищення чи підозріло точний збіг з очікуваною вартістю). Якщо надано середню вартість по категорії та приклади цін інших тендерів — обов'язково порівняй з ними і наведи конкретні цифри у поясненні. Якщо надано ціну за одиницю та медіану цін за одиницю по категорії — порівнюй насамперед ПИТОМІ ціни (грн за штуку/літр/кг): загальна сума може бути малою, а ціна за одиницю - завищеною.
 4. Кількість учасників — чи була реальна конкуренція, чи участь брала лише одна компанія або компанії, пов'язані між собою.
 5. Історія учасника-переможця — чи є ознаки "тендерної кишені" (постійні перемоги в одного замовника, пов'язані засновники, реєстрація незадовго до тендеру).
 6. Скасування/зміни — чи тендер скасовувався і публікувався повторно зі зміненими умовами під конкретного учасника.

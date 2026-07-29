@@ -80,7 +80,7 @@ async def get_dashboard(
         with_period(select(func.count(Tender.id)))
     )).scalar() or 0
     suspicious = (await db.execute(
-        with_period(select(func.count(Tender.id)).where(Tender.risk_score > 60))
+        with_period(select(func.count(Tender.id)).where(Tender.risk_score >= settings.high_risk_threshold))
     )).scalar() or 0
     total_companies = (await db.execute(select(func.count(Company.id)))).scalar() or 0
     total_buyers = (await db.execute(select(func.count(Buyer.id)))).scalar() or 0
@@ -111,7 +111,7 @@ async def get_dashboard(
     chart_days = days if days else 30
     chart_start = datetime.combine(date.today() - timedelta(days=chart_days - 1), datetime.min.time())
     is_reporting = case((Tender.procurement_method == "reporting", 1), else_=0)
-    is_high_risk = case((Tender.risk_score >= 61, 1), else_=0)
+    is_high_risk = case((Tender.risk_score >= settings.high_risk_threshold, 1), else_=0)
     amount0 = func.coalesce(Tender.amount, 0)
     chart_rows = (await db.execute(
         select(
@@ -150,7 +150,7 @@ async def get_dashboard(
         with_period(
             select(Tender)
             .where(
-                Tender.risk_score > 60,
+                Tender.risk_score >= settings.high_risk_threshold,
                 Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
                 Tender.amount >= min_amount,
                 not_reporting,
@@ -161,7 +161,7 @@ async def get_dashboard(
     )
     suspicious_completed = _top_by_attention(suspicious_result.scalars().all(), limit=10)
 
-    # Fallback: якщо з risk > 60 нікого немає - показуємо кандидатів
+    # Fallback: якщо тендерів з високим індексом немає - показуємо кандидатів
     # із середньо-високим індексом (risk >= 40), поріг суми зберігаємо
     if not suspicious_completed:
         fallback_result = await db.execute(

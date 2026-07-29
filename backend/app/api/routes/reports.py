@@ -9,6 +9,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
+from app.core.config import settings
 from app.models.tender import Tender
 from app.schemas import DailyReportResponse, TenderResponse
 
@@ -41,7 +42,7 @@ async def get_daily_report(db: AsyncSession = Depends(get_db)):
     # Підозрілі
     suspicious = (await db.execute(
         select(func.count(Tender.id)).where(
-            Tender.risk_score > 60,
+            Tender.risk_score >= settings.high_risk_threshold,
             Tender.created_at >= today_start,
         )
     )).scalar() or 0
@@ -81,7 +82,7 @@ async def get_daily_report(db: AsyncSession = Depends(get_db)):
     # Підозрілі тендери (за цей же день; якщо немає - топ загалом)
     susp_result = await db.execute(
         select(Tender)
-        .where(Tender.risk_score > 60, Tender.created_at >= today_start)
+        .where(Tender.risk_score >= settings.high_risk_threshold, Tender.created_at >= today_start)
         .order_by(desc(Tender.risk_score))
         .limit(5)
     )
@@ -89,14 +90,14 @@ async def get_daily_report(db: AsyncSession = Depends(get_db)):
     if not susp_list:
         susp_result = await db.execute(
             select(Tender)
-            .where(Tender.risk_score > 60)
+            .where(Tender.risk_score >= settings.high_risk_threshold)
             .order_by(desc(Tender.risk_score))
             .limit(5)
         )
         susp_list = susp_result.scalars().all()
         # Лічильник узгоджуємо зі списком, що показується
         suspicious = (await db.execute(
-            select(func.count(Tender.id)).where(Tender.risk_score > 60)
+            select(func.count(Tender.id)).where(Tender.risk_score >= settings.high_risk_threshold)
         )).scalar() or 0
     suspicious_tenders = [TenderResponse(
         id=t.id, prozorro_id=t.prozorro_id, title=t.title, description=t.description,

@@ -349,7 +349,7 @@ export default function DashboardPage() {
         tenders={data?.suspicious_tenders}
         emptyText={t("noSuspicious")}
         viewAllText={t("viewAll")}
-        viewAllHref="/tenders?risk_min=61&sort_by=risk_score&sort_order=desc"
+        viewAllHref="/tenders?risk_min=56&sort_by=risk_score&sort_order=desc"
         prozorroTitle={t("openInProzorro")}
         tt={tt}
       />

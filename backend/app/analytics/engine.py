@@ -11,6 +11,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory
+from app.core.config import settings
 from app.models.tender import Tender
 from app.models.company import Company
 from app.models.buyer import Buyer
@@ -77,9 +78,9 @@ async def generate_analytics_snapshot():
         # Загальна кількість тендерів
         total = (await session.execute(select(func.count(Tender.id)))).scalar() or 0
         
-        # Підозрілі (risk_score > 60)
+        # Підозрілі (високий Індекс ризику)
         suspicious = (await session.execute(
-            select(func.count(Tender.id)).where(Tender.risk_score > 60)
+            select(func.count(Tender.id)).where(Tender.risk_score >= settings.high_risk_threshold)
         )).scalar() or 0
         
         # Загальний обсяг

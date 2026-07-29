@@ -150,7 +150,7 @@ class ChartDataPoint(BaseModel):
     # Обсяги в грн по кожній серії
     tenders_volume: float = 0.0
     reports_volume: float = 0.0
-    # Тендери з високим індексом ризику (risk_score >= 61)
+    # Тендери з високим індексом ризику (risk_score >= 56)
     high_risk_count: int = 0
     volume: float = 0.0
     new_tenders: int = 0

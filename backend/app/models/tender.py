@@ -32,6 +32,11 @@ class Tender(Base):
     # Фінальна ціна активного award (для фактора "відсутність зниження ціни")
     final_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="UAH")
+    # Кількість та ціна за одиницю (з items Prozorro; заповнюється лише
+    # для тендерів з одним item - інакше суму не можна коректно розділити)
+    quantity: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    unit_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    unit_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     
     # Зв'язки
     buyer_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("buyers.id"), nullable=True)

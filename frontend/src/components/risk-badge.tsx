@@ -16,7 +16,7 @@ export function RiskBadge({ score }: RiskBadgeProps) {
   if (score <= 30) {
     label = `${score}`;
     className = "bg-green-500/10 text-green-600 border-green-500/20";
-  } else if (score <= 60) {
+  } else if (score <= 55) {
     label = `${score}`;
     className = "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
   } else if (score <= 80) {

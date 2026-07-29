@@ -75,6 +75,11 @@ RISK_FACTORS = {
         "uk": "Сума вище медіани по категорії (останні 12 місяців)",
         "en": "Amount above category median (last 12 months)",
     },
+    "unit_price_above_median": {
+        "weight": 15,
+        "uk": "Ціна за одиницю суттєво вище медіани по категорії",
+        "en": "Unit price well above category median",
+    },
     "short_deadline": {
         "weight": 10,
         "uk": "Короткий термін подачі пропозицій",
@@ -218,6 +223,39 @@ async def check_above_median_amount(tender: Tender, session: AsyncSession) -> bo
     return False
 
 
+async def check_unit_price_above_median(tender: Tender, session: AsyncSession) -> bool:
+    """
+    Перевірка: ціна за одиницю > 150% медіани цін за одиницю по тій же
+    CPV-категорії та тій же одиниці виміру (останні 12 місяців).
+    Ловить завищення на дрібних закупівлях, де загальна сума нижче медіани
+    (напр. 20 клавіатур по 450 грн при медіані ~280 грн/шт).
+    Мінімум 5 порівнюваних закупівель - захист від випадкових збігів.
+    """
+    if not tender.unit_price or not tender.cpv_code or not tender.unit_name:
+        return False
+
+    window_start = datetime.utcnow() - timedelta(days=365)
+    result = (await session.execute(
+        select(
+            func.percentile_cont(0.5).within_group(Tender.unit_price),
+            func.count(Tender.id),
+        ).where(
+            Tender.cpv_code == tender.cpv_code,
+            Tender.unit_name == tender.unit_name,
+            Tender.unit_price.isnot(None),
+            Tender.published_date >= window_start,
+            Tender.id != tender.id,
+        )
+    )).first()
+
+    if not result:
+        return False
+    median_unit, count = result
+    if not median_unit or count < 5:
+        return False
+    return tender.unit_price > float(median_unit) * 1.5
+
+
 async def check_short_deadline(tender: Tender) -> bool:
     """Перевірка: короткий термін подачі (лише для competitive)."""
     if not tender.published_date or not tender.end_date:
@@ -263,6 +301,7 @@ async def calculate_risk_score(tender: Tender, session: AsyncSession) -> Tuple[i
         ("repeat_winner", check_repeat_winner(tender, session)),
         ("bid_rotation", check_bid_rotation(tender, session)),
         ("above_median_amount", check_above_median_amount(tender, session)),
+        ("unit_price_above_median", check_unit_price_above_median(tender, session)),
     ]
 
     # Фактори конкуренції - лише там, де конкуренція передбачена процедурою:
