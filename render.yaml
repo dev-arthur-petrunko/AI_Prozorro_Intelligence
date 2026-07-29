@@ -1,17 +1,17 @@
 # Render Blueprint - бекенд AI Prozorro Intelligence
 # https://render.com/docs/blueprint-spec
+# Сервіс збирається з backend/Dockerfile (runtime: docker).
+# УВАГА: чинний production-сервіс створено вручну як Docker, тому цей blueprint
+# застосується лише при перестворенні сервісу через Render Blueprint.
 services:
   - type: web
     name: ai-prozorro-backend
-    runtime: python
+    runtime: docker
     plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.4
       - key: APP_ENV
         value: production
       - key: DEBUG

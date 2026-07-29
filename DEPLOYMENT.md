@@ -27,8 +27,7 @@ Vercel (frontend) ──► Render (backend) ──► Neon (PostgreSQL)
 ## Крок 2. Render — бекенд
 
 1. Зареєструйтесь на [render.com](https://render.com) через GitHub
-2. **New → Blueprint** → виберіть репозиторій `AI_Prozorro_Intelligence` — Render сам прочитає `render.yaml`
-   (або **New → Web Service**, Root Directory: `backend`, Build: `pip install -r requirements.txt`, Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`)
+2. **New → Web Service** → підключіть репозиторій `AI_Prozorro_Intelligence`. Render виявить `backend/Dockerfile` і обере runtime **Docker** (Root Directory: `backend`). Порт бекенд бере з `$PORT` автоматично.
 3. У **Environment** заповніть секретні змінні:
    | Змінна | Значення |
    |---|---|
