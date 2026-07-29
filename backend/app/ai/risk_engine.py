@@ -61,12 +61,12 @@ RISK_FACTORS = {
         "en": "No price reduction despite competition",
     },
     "repeat_winner": {
-        "weight": 20,
+        "weight": 25,
         "uk": "Переможець регулярно виграє у цього замовника",
         "en": "Repeat winner for same buyer",
     },
     "bid_rotation": {
-        "weight": 15,
+        "weight": 20,
         "uk": "Ротація між сталим пулом учасників у замовника",
         "en": "Rotation within a fixed pool of suppliers for the buyer",
     },
