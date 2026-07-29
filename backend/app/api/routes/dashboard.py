@@ -161,23 +161,27 @@ async def get_dashboard(
     )
     suspicious_completed = _top_by_attention(suspicious_result.scalars().all(), limit=10)
 
-    # Fallback: якщо тендерів з високим індексом немає - показуємо кандидатів
-    # із середньо-високим індексом (risk >= 40), поріг суми зберігаємо
-    if not suspicious_completed:
+    # Доповнення: завершених з високим індексом може бути мало (після чесного
+    # скорингу) - добираємо до 10 позицій каскадом строго за рівнем індексу:
+    # немає більше 60 - беремо 55, немає 55 - 50 і так далі (до порогу >= 40)
+    if len(suspicious_completed) < 10:
+        taken_ids = [t.id for t in suspicious_completed]
         fallback_result = await db.execute(
             with_period(
                 select(Tender)
                 .where(
                     Tender.risk_score >= settings.dashboard_suspicious_fallback_risk,
+                    Tender.risk_score < settings.high_risk_threshold,
                     Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
                     Tender.amount >= min_amount,
                     not_reporting,
+                    Tender.id.notin_(taken_ids) if taken_ids else True,
                 )
             )
             .order_by(desc(Tender.risk_score), desc(Tender.amount))
-            .limit(40)
+            .limit(10 - len(suspicious_completed))
         )
-        suspicious_completed = _top_by_attention(fallback_result.scalars().all(), limit=10)
+        suspicious_completed.extend(fallback_result.scalars().all())
 
     suspicious_tenders = [_tender_to_response(t) for t in suspicious_completed]
 

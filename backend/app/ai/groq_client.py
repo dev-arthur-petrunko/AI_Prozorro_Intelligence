@@ -134,6 +134,7 @@ async def generate_ai_explanation(
     tender_amount: float,
     risk_score: int,
     risk_factors: list,
+    tender_description: Optional[str] = None,
     currency: str = "UAH",
     region: Optional[str] = None,
     status: Optional[str] = None,
@@ -181,9 +182,14 @@ async def generate_ai_explanation(
     if prozorro_id:
         data_lines.append(f"Номер тендеру: {prozorro_id}")
     data_lines.append(f"Предмет закупівлі: {tender_title}")
+    # Опис - джерело для критерію "Умови участі" (звужені вимоги, специфічні бренди)
+    if tender_description and tender_description.strip() and tender_description.strip() != tender_title.strip():
+        data_lines.append(f"Опис закупівлі: {tender_description.strip()[:600]}")
     data_lines.append(f"Очікувана вартість: {tender_amount:,.0f} {currency}")
-    # Кількість та ціна за одиницю (якщо в тендері одна позиція)
-    if quantity and unit_price:
+    # Кількість та ціна за одиницю (якщо в тендері одна позиція).
+    # При quantity == 1 питома ціна дорівнює всій сумі тендера - порівняння
+    # з медіаною беззмістовне і лише дублює порівняння по категорії
+    if quantity and unit_price and quantity > 1:
         unit_label = unit_name or "од."
         data_lines.append(
             f"Кількість: {quantity:,.0f} {unit_label}, "

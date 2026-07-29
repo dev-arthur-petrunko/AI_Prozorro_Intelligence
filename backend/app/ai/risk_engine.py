@@ -230,8 +230,12 @@ async def check_unit_price_above_median(tender: Tender, session: AsyncSession) -
     Ловить завищення на дрібних закупівлях, де загальна сума нижче медіани
     (напр. 20 клавіатур по 450 грн при медіані ~280 грн/шт).
     Мінімум 5 порівнюваних закупівель - захист від випадкових збігів.
+    При quantity <= 1 питома ціна дорівнює всій сумі тендера - сигнал
+    дублює above_median_amount (подвійний штраф за одне й те саме), пропускаємо.
     """
     if not tender.unit_price or not tender.cpv_code or not tender.unit_name:
+        return False
+    if not tender.quantity or tender.quantity <= 1:
         return False
 
     window_start = datetime.utcnow() - timedelta(days=365)

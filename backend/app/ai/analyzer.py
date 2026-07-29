@@ -158,6 +158,7 @@ async def generate_tender_explanation(tender: Tender, session: AsyncSession) -> 
 
     explanation = await generate_ai_explanation(
         tender_title=tender.title,
+        tender_description=tender.description,
         tender_amount=tender.amount or 0,
         risk_score=tender.risk_score or 0,
         risk_factors=risk_factors,
@@ -249,7 +250,7 @@ async def _top_candidates_for_period(session: AsyncSession, period_start) -> lis
             return query.where(Tender.published_date >= period_start)
         return query
 
-    # Топ за індексом ризику - ЗАВЕРШЕНІ (високий індекс, fallback >= 40)
+    # Топ за індексом ризику - ЗАВЕРШЕНІ (високий індекс + добір >= 40)
     completed = (await session.execute(
         with_period(
             select(Tender)
@@ -263,21 +264,27 @@ async def _top_candidates_for_period(session: AsyncSession, period_start) -> lis
         .order_by(Tender.risk_score.desc(), Tender.amount.desc())
         .limit(40)
     )).scalars().all()
-    if not completed:
-        completed = (await session.execute(
+    completed_top = top_by_attention(completed, limit=10)
+    # Добір до 10 каскадом строго за рівнем індексу (як на дашборді):
+    # немає більше 60 - беремо 55, немає 55 - 50 і так далі (до >= 40)
+    if len(completed_top) < 10:
+        taken_ids = [t.id for t in completed_top]
+        fallback = (await session.execute(
             with_period(
                 select(Tender)
                 .where(
                     Tender.risk_score >= settings.dashboard_suspicious_fallback_risk,
+                    Tender.risk_score < settings.high_risk_threshold,
                     Tender.status.in_(["complete", "unsuccessful", "cancelled"]),
                     Tender.amount >= min_amount,
                     not_reporting,
+                    Tender.id.notin_(taken_ids) if taken_ids else True,
                 )
             )
             .order_by(Tender.risk_score.desc(), Tender.amount.desc())
-            .limit(40)
+            .limit(10 - len(completed_top))
         )).scalars().all()
-    completed_top = top_by_attention(completed, limit=10)
+        completed_top.extend(fallback)
 
     # Топ підозрілі АКТИВНІ тендери (risk >= 50)
     active = (await session.execute(
