@@ -35,7 +35,7 @@ Vercel (frontend) ──► Render (backend) ──► Neon (PostgreSQL)
    | `DATABASE_URL` | connection string з Neon (крок 1) |
    | `GROQ_API_KEY` | ваш ключ з [console.groq.com](https://console.groq.com) |
    | `BACKEND_CORS_ORIGINS` | поки `http://localhost:3000`, після кроку 3 додати Vercel-домен |
-4. Дочекайтесь деплою. Ваш бекенд: `https://ai-prozorro-backend.onrender.com`
+4. Дочекайтесь деплою. Ваш бекенд: `https://ai-prozorro-intelligence.onrender.com`
 5. Перевірка: відкрийте `https://<ваш-бекенд>.onrender.com/health` → має бути `{"status": "healthy"}`.
    Після першого старту почнеться імпорт тендерів з Prozorro (кілька хвилин).
 
@@ -60,7 +60,7 @@ Vercel (frontend) ──► Render (backend) ──► Neon (PostgreSQL)
 4. **Environment Variables**:
    | Змінна | Значення |
    |---|---|
-   | `NEXT_PUBLIC_API_URL` | `https://ai-prozorro-backend.onrender.com` (URL з кроку 2, без слеша в кінці) |
+   | `NEXT_PUBLIC_API_URL` | `https://ai-prozorro-intelligence.onrender.com` (URL з кроку 2, без слеша в кінці) |
 5. **Deploy**. Ваш сайт: `https://<project>.vercel.app`
 
 ---
