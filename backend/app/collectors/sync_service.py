@@ -209,20 +209,37 @@ async def run_initial_import():
 
 
 async def run_sync():
-    """Інкрементальна синхронізація."""
+    """
+    Інкрементальна синхронізація (кожні N хвилин за розкладом).
+    Помилка обробки окремого тендера не зриває пакет: запис пропускається
+    і буде підтягнутий наступним запуском синхронізації.
+    """
     async with async_session_factory() as session:
         logger.info("Запуск синхронізації...")
 
         raw_tenders = await prozorro_client.fetch_recent_tenders(max_tenders=50)
 
         new_count = 0
+        errors = 0
         for raw_tender in raw_tenders:
-            normalized = normalize_tender(raw_tender)
-            is_new = await import_tender(session, normalized)
-            if is_new:
-                new_count += 1
+            try:
+                normalized = normalize_tender(raw_tender)
+                is_new = await import_tender(session, normalized)
+                if is_new:
+                    new_count += 1
+                # Комітимо по одному: збій одного запису не втратить решту
+                await session.commit()
+            except Exception as e:
+                errors += 1
+                await session.rollback()
+                tid = raw_tender.get("id", "?") if isinstance(raw_tender, dict) else "?"
+                logger.error(f"Помилка імпорту тендера {tid}: {e}")
 
-        await session.commit()
+        if errors:
+            logger.warning(
+                f"Синхронізація: {errors} тендерів пропущено через помилки, "
+                f"повторна спроба у наступному циклі"
+            )
         logger.info(f"Синхронізація завершена: {new_count} нових тендерів")
 
         # Аналітику/AI запускаємо, якщо є нові АБО є тендери, що потребують переаналізу

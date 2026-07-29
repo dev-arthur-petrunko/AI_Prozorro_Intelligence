@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     # Вікно збереження даних ~6 місяців: історія переможців/замовників
     # для AI-аналізу охоплює півроку
     data_retention_days: int = 180
-    sync_interval_minutes: int = 30
+    sync_interval_minutes: int = 10
 
     # Сервер
     backend_host: str = "0.0.0.0"

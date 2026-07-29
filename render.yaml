@@ -29,6 +29,6 @@ services:
       - key: BACKEND_CORS_ORIGINS
         sync: false # напр.: https://your-app.vercel.app,http://localhost:3000
       - key: SYNC_INTERVAL_MINUTES
-        value: "30"
+        value: "10"
       - key: DATA_RETENTION_DAYS
         value: "180"
