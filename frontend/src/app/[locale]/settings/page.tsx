@@ -7,6 +7,12 @@ export default function SettingsPage() {
   const t = useTranslations("nav");
   const s = useTranslations("settings");
 
+  const changelogLatest = [
+    s("v146_1"),
+    s("v146_2"),
+    s("v146_3"),
+  ];
+
   const changelog = [
     s("changelog1"),
     s("changelog2"),
@@ -34,7 +40,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{s("version")}</span>
-              <span className="font-medium">1.4.5</span>
+              <span className="font-medium">1.4.6</span>
             </div>
           </div>
         </CardContent>
@@ -46,9 +52,25 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm">
-            {changelog.map((item, i) => (
+            {changelogLatest.map((item, i) => (
               <li key={i} className="flex gap-2">
                 <span className="mt-0.5 text-primary">•</span>
+                <span className="text-muted-foreground">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-muted-foreground">{s("previousVersion")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm">
+            {changelog.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="mt-0.5 text-muted-foreground/50">•</span>
                 <span className="text-muted-foreground">{item}</span>
               </li>
             ))}

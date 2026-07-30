@@ -115,7 +115,11 @@ export default function AnalyticsPage() {
   const [days, setDays] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    api.getAnalytics(days).then(setData).catch(console.error);
+    const load = () => api.getAnalytics(days).then(setData).catch(console.error);
+    load();
+    // Автооновлення кожні 5 хв (синхронізація з Prozorro - кожні 10 хв)
+    const timer = setInterval(load, 5 * 60 * 1000);
+    return () => clearInterval(timer);
   }, [days]);
 
   const metricKey = metric === "count" ? "tenders_count" : "total_amount";

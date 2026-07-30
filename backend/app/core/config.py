@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Додаток
     app_name: str = "AI Prozorro Intelligence"
-    app_version: str = "1.4.5"
+    app_version: str = "1.4.6"
     app_env: str = "development"
     debug: bool = True
 

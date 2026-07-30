@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowDown, ArrowUp, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api, TenderListResponse } from "@/services/api";
@@ -82,8 +82,10 @@ function TendersContent() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         {data && (
-          <span className="text-sm text-muted-foreground">
-            {data.total.toLocaleString("uk-UA")}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-sm">
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold">{data.total.toLocaleString("uk-UA")}</span>
+            <span className="text-muted-foreground">{t("totalCount")}</span>
           </span>
         )}
       </div>

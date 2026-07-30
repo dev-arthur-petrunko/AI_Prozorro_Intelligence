@@ -190,10 +190,16 @@ export default function DashboardPage() {
   const [chartMetric, setChartMetric] = useState<"count" | "amount">("count");
 
   useEffect(() => {
-    api
-      .getDashboard(days)
-      .then(setData)
-      .catch(console.error);
+    const load = () =>
+      api
+        .getDashboard(days)
+        .then(setData)
+        .catch(console.error);
+    load();
+    // Автооновлення кожні 5 хв: синхронізація з Prozorro йде кожні 10 хв,
+    // тому мітка "Дані оновлено" та KPI підтягуються без перезавантаження
+    const timer = setInterval(load, 5 * 60 * 1000);
+    return () => clearInterval(timer);
   }, [days]);
 
   const kpi = data?.kpi;
