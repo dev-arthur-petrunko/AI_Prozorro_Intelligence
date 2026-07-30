@@ -29,7 +29,7 @@ export function Header() {
       <div className="flex items-center gap-4">
         <MobileNav />
         <h1 className="text-lg font-semibold text-foreground lg:hidden">
-          AI Prozorro
+          AI ProZorro
         </h1>
       </div>
 

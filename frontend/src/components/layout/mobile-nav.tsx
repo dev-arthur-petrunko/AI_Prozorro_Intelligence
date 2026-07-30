@@ -13,6 +13,7 @@ import {
   Settings,
   Menu,
   Scale,
+  Heart,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const navItems = [
   { key: "reports", href: "/reports", icon: FileBarChart },
   { key: "settings", href: "/settings", icon: Settings },
   { key: "legal", href: "/legal", icon: Scale },
+  { key: "support", href: "/support", icon: Heart },
 ] as const;
 
 export function MobileNav() {
@@ -43,9 +45,9 @@ export function MobileNav() {
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex h-16 items-center gap-3 border-b border-border px-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/emblem.png" alt="AI Prozorro" className="h-9 w-9 rounded-full" />
+            <img src="/emblem.png" alt="AI ProZorro" className="h-9 w-9 rounded-full" />
             <SheetTitle className="text-sm font-semibold text-foreground">
-              AI Prozorro
+              AI ProZorro
             </SheetTitle>
           </div>
           <nav className="space-y-1 px-3 py-4">

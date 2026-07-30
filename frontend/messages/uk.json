@@ -7,7 +7,8 @@
     "analytics": "Аналітика",
     "reports": "Звіти",
     "settings": "Налаштування",
-    "legal": "Правові засади"
+    "legal": "Правові засади",
+    "support": "Підтримати проєкт"
   },
   "settings": {
     "apiConfig": "Конфігурація API",
@@ -28,7 +29,7 @@
     "changelog8": "Хмарний деплой: Neon + Render + Vercel, авто-деплой з GitHub, мітка «Дані оновлено» на кожній сторінці"
   },
   "dashboard": {
-    "title": "AI Prozorro Intelligence",
+    "title": "AI ProZorro Intelligence",
     "subtitle": "Моніторинг державних закупівель",
     "totalTenders": "Усього тендерів",
     "suspiciousTenders": "Високий індекс ризику (AI)",

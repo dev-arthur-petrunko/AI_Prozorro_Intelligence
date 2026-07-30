@@ -7,7 +7,8 @@
     "analytics": "Analytics",
     "reports": "Reports",
     "settings": "Settings",
-    "legal": "Legal"
+    "legal": "Legal",
+    "support": "Support the Project"
   },
   "settings": {
     "apiConfig": "API Configuration",
@@ -28,7 +29,7 @@
     "changelog8": "Cloud deployment: Neon + Render + Vercel, auto-deploy from GitHub, 'Data updated' label on every page"
   },
   "dashboard": {
-    "title": "AI Prozorro Intelligence",
+    "title": "AI ProZorro Intelligence",
     "subtitle": "Public Procurement Monitoring",
     "totalTenders": "Total Tenders",
     "suspiciousTenders": "High Risk Index (AI)",
