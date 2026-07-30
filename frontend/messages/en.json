@@ -71,6 +71,7 @@
     "version": "Version",
     "whatsNew": "What's new in v1.6.0",
     "previousVersion": "Previous version (v1.4.6)",
+    "olderVersion": "Version v1.4.5",
     "v160_1": "Telegram reports in a new format: full today's dashboard summary — daily KPIs, critical tenders, watchlist, largest risky purchase",
     "v160_2": "New report schedule: twice a day — at 10:00 and 17:00 Kyiv time",
     "v160_3": "Flat n8n data format with Prozorro links — a ready basis for the AI overview in Telegram",
@@ -83,7 +84,7 @@
     "changelog4": "Dashboard: count ↔ amount toggle, chart brush zoom, attention-priority tops with dates and Prozorro links",
     "changelog5": "Analytics: all regions of Ukraine with values on bars, DK 021:2015 code descriptions, 7/30/90-day period filter",
     "changelog6": "New Legal page: data sources, legislative basis, legal disclaimer",
-    "changelog7": "Telegram notifications via n8n: today's dashboard summary at 10:00 and 17:00 Kyiv time",
+    "changelog7": "Telegram notifications via n8n: automatic scheduled reports",
     "changelog8": "Cloud deployment: Neon + Render + Vercel, auto-deploy from GitHub, 'Data updated' label on every page"
   },
   "dashboard": {

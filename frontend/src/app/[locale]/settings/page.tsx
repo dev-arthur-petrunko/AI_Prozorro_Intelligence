@@ -20,6 +20,18 @@ export default function SettingsPage() {
     s("v146_3"),
   ];
 
+  // Історія старих версій зберігається - не видаляти при релізах
+  const changelogOld = [
+    s("changelog1"),
+    s("changelog2"),
+    s("changelog3"),
+    s("changelog4"),
+    s("changelog5"),
+    s("changelog6"),
+    s("changelog7"),
+    s("changelog8"),
+  ];
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t("settings")}</h1>
@@ -65,6 +77,22 @@ export default function SettingsPage() {
         <CardContent>
           <ul className="space-y-2 text-sm">
             {changelog.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="mt-0.5 text-muted-foreground/50">•</span>
+                <span className="text-muted-foreground">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-muted-foreground">{s("olderVersion")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm">
+            {changelogOld.map((item, i) => (
               <li key={i} className="flex gap-2">
                 <span className="mt-0.5 text-muted-foreground/50">•</span>
                 <span className="text-muted-foreground">{item}</span>
