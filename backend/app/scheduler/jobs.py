@@ -45,15 +45,15 @@ async def ai_analysis_job():
 
 
 async def daily_report_job():
-    """Звіт на n8n webhook о 10:00, 13:00, 16:00 та 19:00 за Києвом."""
+    """Зведення дашборду за сьогодні на n8n webhook о 10:00 та 17:00 за Києвом."""
     from app.database import async_session_factory
-    from app.api.routes.reports import get_daily_report
-    from app.notifications.n8n_client import send_daily_report
+    from app.api.routes.dashboard import get_dashboard
+    from app.notifications.n8n_client import send_dashboard_summary
 
-    logger.info("⏰ Запуск щоденного звіту...")
+    logger.info("⏰ Запуск зведення дашборду за сьогодні...")
     async with async_session_factory() as session:
-        report = await get_daily_report(db=session)
-        await send_daily_report(report.model_dump(mode="json"))
+        dashboard = await get_dashboard(days=1, db=session)
+        await send_dashboard_summary(dashboard.model_dump(mode="json"))
 
 
 async def initial_import_job():
@@ -101,12 +101,12 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    # Звіт на n8n о 10:00, 13:00, 16:00 та 19:00 за Києвом
+    # Зведення дашборду на n8n о 10:00 та 17:00 за Києвом
     scheduler.add_job(
         daily_report_job,
-        trigger=CronTrigger(hour="10,13,16,19", minute=0, timezone=KYIV_TZ),
+        trigger=CronTrigger(hour="10,17", minute=0, timezone=KYIV_TZ),
         id="daily_report",
-        name="Щоденний звіт",
+        name="Зведення дашборду за сьогодні",
         replace_existing=True,
     )
 

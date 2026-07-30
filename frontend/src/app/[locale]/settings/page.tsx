@@ -8,20 +8,15 @@ export default function SettingsPage() {
   const s = useTranslations("settings");
 
   const changelogLatest = [
-    s("v146_1"),
-    s("v146_2"),
-    s("v146_3"),
+    s("v160_1"),
+    s("v160_2"),
+    s("v160_3"),
   ];
 
   const changelog = [
-    s("changelog1"),
-    s("changelog2"),
-    s("changelog3"),
-    s("changelog4"),
-    s("changelog5"),
-    s("changelog6"),
-    s("changelog7"),
-    s("changelog8"),
+    s("v146_1"),
+    s("v146_2"),
+    s("v146_3"),
   ];
 
   return (
@@ -40,7 +35,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{s("version")}</span>
-              <span className="font-medium">1.4.6</span>
+              <span className="font-medium">1.6.0</span>
             </div>
           </div>
         </CardContent>
