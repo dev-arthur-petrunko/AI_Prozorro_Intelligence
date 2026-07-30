@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
+import { APP_VERSION } from "@/lib/version";
 import {
   LayoutDashboard,
   FileText,
@@ -84,7 +85,7 @@ export function Sidebar() {
         {/* Footer */}
         <div className="border-t border-border px-6 py-4">
           <p className="text-xs text-muted-foreground">
-            v1.6.0 &middot; {tc("openSource")}
+            v{APP_VERSION} &middot; {tc("openSource")}
           </p>
         </div>
       </div>

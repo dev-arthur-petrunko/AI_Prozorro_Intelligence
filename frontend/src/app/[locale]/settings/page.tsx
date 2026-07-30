@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { APP_VERSION } from "@/lib/version";
 
 export default function SettingsPage() {
   const t = useTranslations("nav");
@@ -35,7 +36,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{s("version")}</span>
-              <span className="font-medium">1.6.0</span>
+              <span className="font-medium">{APP_VERSION}</span>
             </div>
           </div>
         </CardContent>

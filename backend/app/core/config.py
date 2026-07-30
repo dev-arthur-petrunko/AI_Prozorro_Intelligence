@@ -13,15 +13,22 @@ from typing import List
 ROOT_ENV = Path(__file__).resolve().parent.parent.parent.parent / ".env"
 LOCAL_ENV = Path(__file__).resolve().parent.parent.parent / ".env"
 
+# Версія задається ТІЛЬКИ тут: це не поле Settings, тому змінна оточення
+# APP_VERSION (напр. стара на Render) не може її перекрити
+APP_VERSION = "1.6.0"
+
 
 class Settings(BaseSettings):
     """Головні налаштування додатку."""
 
     # Додаток
     app_name: str = "AI Prozorro Intelligence"
-    app_version: str = "1.6.0"
     app_env: str = "development"
     debug: bool = True
+
+    @property
+    def app_version(self) -> str:
+        return APP_VERSION
 
     # База даних
     database_url: str = "sqlite+aiosqlite:///./prozorro.db"
