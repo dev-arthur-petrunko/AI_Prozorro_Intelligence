@@ -358,7 +358,8 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-muted-foreground" title={t("savingsNote")}>{t("savings")}</p>
                 <p className="text-2xl font-bold text-emerald-500">
-                  {kpi ? formatAmount(kpi.savings_total) : "—"}
+                  {/* Захист від старого API без цього поля (до деплою бекенда) */}
+                  {kpi?.savings_total != null ? formatAmount(kpi.savings_total) : "—"}
                 </p>
               </div>
             </div>
@@ -375,7 +376,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-muted-foreground" title={t("singleParticipantNote")}>{t("singleParticipant")}</p>
                 <p className="text-2xl font-bold">
-                  {kpi ? `${kpi.single_participant_pct}%` : "—"}
+                  {kpi?.single_participant_pct != null ? `${kpi.single_participant_pct}%` : "—"}
                 </p>
               </div>
             </div>
