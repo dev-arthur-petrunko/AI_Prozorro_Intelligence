@@ -137,7 +137,19 @@ export function ProcurementChart({
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#8b949e" strokeOpacity={0.25} />
             <XAxis dataKey="date" tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" />
-            <YAxis tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" tickFormatter={fmt} />
+            <YAxis yAxisId="left" tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" tickFormatter={fmt} />
+            {/* Окрема вісь для звітів про договори: Prozorro публікує їх пачками,
+                і піковий день сплющував криву конкурентних тендерів до нуля */}
+            {hasReports && (
+              <YAxis
+                yAxisId="reports"
+                orientation="right"
+                tick={{ fill: "#f59e0b", fontSize: 11 }}
+                stroke="#f59e0b"
+                strokeOpacity={0.6}
+                tickFormatter={fmt}
+              />
+            )}
             <Tooltip
               contentStyle={{
                 backgroundColor: "var(--card)",
@@ -156,6 +168,7 @@ export function ProcurementChart({
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Area
+              yAxisId="left"
               type="monotone"
               dataKey="tenders"
               name={tendersName}
@@ -167,6 +180,7 @@ export function ProcurementChart({
             />
             {hasReports && (
               <Area
+                yAxisId="reports"
                 type="monotone"
                 dataKey="reports"
                 name={reportsName}
@@ -179,6 +193,7 @@ export function ProcurementChart({
             )}
             {showHighRisk && (
               <Line
+                yAxisId="left"
                 type="monotone"
                 dataKey="highRisk"
                 name={highRiskName}

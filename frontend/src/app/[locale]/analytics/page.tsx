@@ -29,6 +29,10 @@ const TOOLTIP_STYLE = {
   borderRadius: "6px",
   fontSize: "12px",
 } as const;
+// Без явного кольору recharts фарбує рядки tooltip у колір серії,
+// а для барів із Cell він не заданий - текст чорний на темній темі
+const TOOLTIP_ITEM_STYLE = { color: "var(--card-foreground)" } as const;
+const TOOLTIP_LABEL_STYLE = { color: "var(--card-foreground)" } as const;
 
 function formatAmount(amount: number): string {
   if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}B`;
@@ -218,6 +222,8 @@ export default function AnalyticsPage() {
                     <YAxis dataKey="region" type="category" width={150} tick={AXIS_TICK} stroke="#8b949e" interval={0} />
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}
+                      itemStyle={TOOLTIP_ITEM_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
                       cursor={{ fill: "#8b949e", fillOpacity: 0.08 }}
                       formatter={(v) => [formatMetric(Number(v ?? 0)), metricLabel]}
                     />
@@ -258,6 +264,8 @@ export default function AnalyticsPage() {
                     />
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}
+                      itemStyle={TOOLTIP_ITEM_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
                       cursor={{ fill: "#8b949e", fillOpacity: 0.08 }}
                       formatter={(v) => [formatMetric(Number(v ?? 0)), metricLabel]}
                       // Розшифровка CPV коду в tooltip
@@ -333,6 +341,8 @@ export default function AnalyticsPage() {
                     <YAxis dataKey="name" type="category" width={220} tick={AXIS_TICK_SM} stroke="#8b949e" />
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}
+                      itemStyle={TOOLTIP_ITEM_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
                       cursor={{ fill: "#8b949e", fillOpacity: 0.08 }}
                       formatter={(v) => [formatMetric(Number(v ?? 0)), metric === "count" ? t("wins") : t("metricAmount")]}
                       // Повна назва компанії в tooltip
@@ -403,6 +413,8 @@ export default function AnalyticsPage() {
                     <YAxis dataKey="name" type="category" width={220} tick={AXIS_TICK_SM} stroke="#8b949e" />
                     <Tooltip
                       contentStyle={TOOLTIP_STYLE}
+                      itemStyle={TOOLTIP_ITEM_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
                       cursor={{ fill: "#8b949e", fillOpacity: 0.08 }}
                       formatter={(v) => [formatMetric(Number(v ?? 0)), metric === "count" ? t("tendersCount") : t("metricAmount")]}
                       // Повна назва замовника в tooltip
