@@ -10,6 +10,9 @@ import {
   TrendingUp,
   ExternalLink,
   Clock,
+  PiggyBank,
+  UserX,
+  CalendarClock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +21,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Cell,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts";
 import { api, DashboardResponse, TenderResponse } from "@/services/api";
 import { ProcurementChart } from "@/components/charts/procurement-chart";
 import { RiskBadge } from "@/components/risk-badge";
@@ -42,6 +55,16 @@ function formatDateTime(dateStr: string | null): string {
   const d = new Date(dateStr);
   return `${d.toLocaleDateString("uk-UA")} ${d.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" })}`;
 }
+
+/** Повних днів до дедлайну (0 = сьогодні) */
+function daysUntil(dateStr: string | null): number {
+  if (!dateStr) return 0;
+  const diff = new Date(dateStr).getTime() - Date.now();
+  return Math.max(0, Math.floor(diff / 86_400_000));
+}
+
+// Кольори зон шкали Індексу ризику: низький/середній/високий/критичний
+const RISK_BUCKET_COLORS = ["#22c55e", "#f59e0b", "#f97316", "#ef4444"];
 
 /** Назва тендера з посиланням на картку + клікабельний Prozorro ID */
 function TenderTitleCell({
@@ -245,7 +268,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -324,6 +347,40 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Економія на торгах: очікувана мінус фінальна ціна завершених торгів */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-md bg-emerald-500/10 p-2">
+                <PiggyBank className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground" title={t("savingsNote")}>{t("savings")}</p>
+                <p className="text-2xl font-bold text-emerald-500">
+                  {kpi ? formatAmount(kpi.savings_total) : "—"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Частка конкурентних тендерів з одним учасником */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-md bg-orange-500/10 p-2">
+                <UserX className="h-4 w-4 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground" title={t("singleParticipantNote")}>{t("singleParticipant")}</p>
+                <p className="text-2xl font-bold">
+                  {kpi ? `${kpi.single_participant_pct}%` : "—"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Chart */}
@@ -349,6 +406,120 @@ export default function DashboardPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Розподіл Індексу ризику + тендери, що скоро закриваються */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {t("riskDistribution")}
+              <span className="ml-2 text-xs font-normal text-muted-foreground">({t("riskDistributionNote")})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data?.risk_distribution ?? []} margin={{ top: 18 }}>
+                  <XAxis dataKey="label" tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" />
+                  <YAxis tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" allowDecimals={false} />
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      color: "var(--card-foreground)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                    }}
+                    itemStyle={{ color: "var(--card-foreground)" }}
+                    labelStyle={{ color: "var(--card-foreground)" }}
+                    cursor={{ fill: "#8b949e", fillOpacity: 0.08 }}
+                    formatter={(v) => [String(v ?? 0), t("riskTendersCount")]}
+                  />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="count" position="top" style={{ fontSize: 10, fill: "#8b949e" }} />
+                    {(data?.risk_distribution ?? []).map((_, i) => (
+                      <Cell key={i} fill={RISK_BUCKET_COLORS[i % RISK_BUCKET_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+              <span><span className="text-emerald-500">●</span> {t("riskLow")}</span>
+              <span><span className="text-amber-500">●</span> {t("riskMedium")}</span>
+              <span><span className="text-orange-500">●</span> {t("riskHigh")}</span>
+              <span><span className="text-red-500">●</span> {t("riskCritical")}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">
+              <span className="inline-flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-primary" />
+                {t("closingSoon")}
+              </span>
+              <span className="ml-2 text-xs font-normal text-muted-foreground">({t("closingSoonNote")})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="px-4 py-2 text-left font-medium text-muted-foreground">{tt("tender")}</th>
+                    <th className="px-4 py-2 text-left font-medium text-muted-foreground">{tt("region")}</th>
+                    <th className="px-4 py-2 text-right font-medium text-muted-foreground">{tt("amount")}</th>
+                    <th className="px-4 py-2 text-center font-medium text-muted-foreground">{tt("riskScore")}</th>
+                    <th className="px-4 py-2 text-right font-medium text-muted-foreground">{t("deadline")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data?.closing_soon?.map((tender) => {
+                    const left = daysUntil(tender.end_date);
+                    return (
+                      <tr key={tender.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <TenderTitleCell tender={tender} maxWidth="max-w-[320px]" prozorroTitle={t("openInProzorro")} />
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{tender.region ?? "—"}</td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">
+                          {formatAmount(tender.amount)} {tender.currency}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <RiskBadge score={tender.risk_score} />
+                        </td>
+                        <td className="px-4 py-3 text-right text-xs whitespace-nowrap">
+                          <span className="text-muted-foreground">{formatDate(tender.end_date)}</span>
+                          <span
+                            className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              left <= 1
+                                ? "bg-destructive/10 text-destructive"
+                                : left <= 3
+                                ? "bg-amber-500/10 text-amber-500"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {left === 0 ? t("closesToday") : t("daysLeft", { days: left })}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {(!data?.closing_soon || data.closing_soon.length === 0) && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                        {t("noClosingSoon")}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Top Suspicious Tenders - completed (від 50 тис. грн, щоб мікрозакупівлі не забивали топ) */}
       <SuspiciousTable

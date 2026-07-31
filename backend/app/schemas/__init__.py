@@ -138,6 +138,16 @@ class DashboardKPI(BaseModel):
     total_buyers: int = 0
     today_volume: float = 0.0
     today_new: int = 0
+    # Економія на торгах: С(очікувана - фінальна) по завершених конкурентних
+    savings_total: float = 0.0
+    # Частка конкурентних тендерів з одним учасником, %
+    single_participant_pct: float = 0.0
+
+
+class RiskBucket(BaseModel):
+    """Кошик гістограми Індексу ризику (AI)."""
+    label: str  # "0-30", "31-55", "56-80", "81+"
+    count: int = 0
 
 
 class ChartDataPoint(BaseModel):
@@ -163,6 +173,10 @@ class DashboardResponse(BaseModel):
     suspicious_tenders: List[TenderResponse] = []
     active_suspicious_tenders: List[TenderResponse] = []
     recent_tenders: List[TenderResponse] = []
+    # Розподіл Індексу ризику (AI) по зонах шкали
+    risk_distribution: List[RiskBucket] = []
+    # Активні тендери, що закриваються в найближчі 7 днів
+    closing_soon: List[TenderResponse] = []
     # Час останнього оновлення даних (остання синхронізація з Prozorro)
     last_updated: Optional[datetime] = None
 

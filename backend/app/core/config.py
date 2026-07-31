@@ -15,7 +15,7 @@ LOCAL_ENV = Path(__file__).resolve().parent.parent.parent / ".env"
 
 # Версія задається ТІЛЬКИ тут: це не поле Settings, тому змінна оточення
 # APP_VERSION (напр. стара на Render) не може її перекрити
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.6.3"
 
 
 class Settings(BaseSettings):

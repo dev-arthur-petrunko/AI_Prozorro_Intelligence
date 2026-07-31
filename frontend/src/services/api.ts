@@ -38,6 +38,15 @@ export interface DashboardKPI {
   total_buyers: number;
   today_volume: number;
   today_new: number;
+  // Економія на торгах (очікувана - фінальна) по завершених конкурентних
+  savings_total: number;
+  // Частка конкурентних тендерів з одним учасником, %
+  single_participant_pct: number;
+}
+
+export interface RiskBucket {
+  label: string;
+  count: number;
 }
 
 export interface ChartDataPoint {
@@ -129,6 +138,8 @@ export interface DashboardResponse {
   suspicious_tenders: TenderResponse[];
   active_suspicious_tenders: TenderResponse[];
   recent_tenders: TenderResponse[];
+  risk_distribution: RiskBucket[];
+  closing_soon: TenderResponse[];
   last_updated: string | null;
 }
 

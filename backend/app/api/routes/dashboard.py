@@ -16,7 +16,7 @@ from app.models.company import Company
 from app.models.buyer import Buyer
 from app.ai.risk_engine import top_by_attention, dedupe_tenders
 from app.schemas import (
-    DashboardResponse, DashboardKPI, ChartDataPoint, TenderResponse
+    DashboardResponse, DashboardKPI, ChartDataPoint, TenderResponse, RiskBucket
 )
 
 router = APIRouter()
@@ -96,6 +96,35 @@ async def get_dashboard(
         select(func.count(Tender.id)).where(Tender.published_date >= today_start)
     )).scalar() or 0
 
+    # Економія на торгах: очікувана мінус фінальна ціна по завершених
+    # конкурентних тендерах (тільки де фінальна реально нижча)
+    not_reporting = (Tender.procurement_method.is_(None)) | (Tender.procurement_method != "reporting")
+    savings_total = (await db.execute(
+        with_period(
+            select(func.coalesce(func.sum(Tender.amount - Tender.final_amount), 0))
+            .where(
+                Tender.status == "complete",
+                Tender.final_amount.isnot(None),
+                Tender.final_amount < Tender.amount,
+                not_reporting,
+            )
+        )
+    )).scalar() or 0
+
+    # Частка конкурентних тендерів з одним учасником (серед тих, де учасники вже відомі)
+    single_row = (await db.execute(
+        with_period(
+            select(
+                func.sum(case((Tender.participants_count == 1, 1), else_=0)),
+                func.count(Tender.id),
+            )
+            .where(Tender.participants_count >= 1, not_reporting)
+        )
+    )).first()
+    single_cnt = int(single_row[0] or 0) if single_row else 0
+    single_base = int(single_row[1] or 0) if single_row else 0
+    single_participant_pct = round(single_cnt / single_base * 100, 1) if single_base else 0.0
+
     kpi = DashboardKPI(
         total_tenders=total_tenders,
         suspicious_tenders=suspicious,
@@ -103,6 +132,8 @@ async def get_dashboard(
         total_buyers=total_buyers,
         today_volume=float(today_volume),
         today_new=today_new,
+        savings_total=float(savings_total),
+        single_participant_pct=single_participant_pct,
     )
 
     # Дані графіка рахуємо наживо з БД одним групованим запитом
@@ -144,7 +175,6 @@ async def get_dashboard(
     # Топ за індексом ризику - ЗАВЕРШЕНІ (complete/unsuccessful/cancelled).
     # Жорсткий фільтр лише один: сума >= 10 тис. грн (мікрозакупівлі - шум).
     # Reporting-звіти (прямі договори) виключаємо: один учасник там - норма
-    not_reporting = (Tender.procurement_method.is_(None)) | (Tender.procurement_method != "reporting")
     min_amount = settings.dashboard_suspicious_min_amount
     suspicious_result = await db.execute(
         with_period(
@@ -214,6 +244,43 @@ async def get_dashboard(
         for t in _dedupe_tenders(recent_result.scalars().all(), limit=10)
     ]
 
+    # Розподіл Індексу ризику по зонах шкали (одним запитом)
+    dist_row = (await db.execute(
+        with_period(
+            select(
+                func.sum(case((Tender.risk_score <= 30, 1), else_=0)),
+                func.sum(case(((Tender.risk_score >= 31) & (Tender.risk_score <= 55), 1), else_=0)),
+                func.sum(case(((Tender.risk_score >= 56) & (Tender.risk_score <= 80), 1), else_=0)),
+                func.sum(case((Tender.risk_score >= 81, 1), else_=0)),
+            )
+            .where(Tender.risk_score.isnot(None))
+        )
+    )).first()
+    risk_distribution = [
+        RiskBucket(label="0-30", count=int(dist_row[0] or 0) if dist_row else 0),
+        RiskBucket(label="31-55", count=int(dist_row[1] or 0) if dist_row else 0),
+        RiskBucket(label="56-80", count=int(dist_row[2] or 0) if dist_row else 0),
+        RiskBucket(label="81+", count=int(dist_row[3] or 0) if dist_row else 0),
+    ]
+
+    # Скоро закриваються: активні конкурентні з дедлайном у найближчі 7 днів
+    # (без фільтра періоду публікації: дедлайн важливіший за дату публікації)
+    now = datetime.utcnow()
+    closing_result = await db.execute(
+        select(Tender)
+        .where(
+            Tender.status.like("active%"),
+            Tender.end_date.isnot(None),
+            Tender.end_date >= now,
+            Tender.end_date <= now + timedelta(days=7),
+            Tender.amount >= min_amount,
+            not_reporting,
+        )
+        .order_by(Tender.end_date.asc(), desc(Tender.amount))
+        .limit(10)
+    )
+    closing_soon = [_tender_to_response(t) for t in closing_result.scalars().all()]
+
     # Час останнього оновлення даних = остання зміна тендера при синхронізації
     last_updated = (await db.execute(
         select(func.max(Tender.updated_at))
@@ -225,5 +292,7 @@ async def get_dashboard(
         suspicious_tenders=suspicious_tenders,
         active_suspicious_tenders=active_suspicious_tenders,
         recent_tenders=recent_tenders,
+        risk_distribution=risk_distribution,
+        closing_soon=closing_soon,
         last_updated=last_updated,
     )

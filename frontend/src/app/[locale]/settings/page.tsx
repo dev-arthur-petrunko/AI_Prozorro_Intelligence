@@ -9,12 +9,18 @@ export default function SettingsPage() {
   const s = useTranslations("settings");
 
   const changelogLatest = [
+    s("v163_1"),
+    s("v163_2"),
+    s("v163_3"),
+  ];
+
+  const changelog160 = [
     s("v160_1"),
     s("v160_2"),
     s("v160_3"),
   ];
 
-  const changelog = [
+  const changelog146 = [
     s("v146_1"),
     s("v146_2"),
     s("v146_3"),
@@ -76,7 +82,23 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm">
-            {changelog.map((item, i) => (
+            {changelog160.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="mt-0.5 text-muted-foreground/50">•</span>
+                <span className="text-muted-foreground">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-muted-foreground">{s("version146")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 text-sm">
+            {changelog146.map((item, i) => (
               <li key={i} className="flex gap-2">
                 <span className="mt-0.5 text-muted-foreground/50">•</span>
                 <span className="text-muted-foreground">{item}</span>
