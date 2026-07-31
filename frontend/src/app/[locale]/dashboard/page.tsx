@@ -410,19 +410,23 @@ export default function DashboardPage() {
 
       {/* Розподіл Індексу ризику + тендери, що скоро закриваються */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card>
+        {/* flex-колонка: гістограма розтягується на всю висоту картки,
+            щоб не було порожнечі поруч із високою таблицею дедлайнів */}
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">
               {t("riskDistribution")}
               <span className="ml-2 text-xs font-normal text-muted-foreground">({t("riskDistributionNote")})</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-56">
+          <CardContent className="flex flex-1 flex-col">
+            <div className="min-h-56 flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data?.risk_distribution ?? []} margin={{ top: 18 }}>
                   <XAxis dataKey="label" tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" />
-                  <YAxis tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" allowDecimals={false} />
+                  {/* sqrt-шкала: без неї кошики з десятками тендерів невидимі
+                      поряд із тисячами в зоні 0-30 */}
+                  <YAxis scale="sqrt" tick={{ fill: "#8b949e", fontSize: 11 }} stroke="#8b949e" allowDecimals={false} />
                   <RechartsTooltip
                     contentStyle={{
                       backgroundColor: "var(--card)",
@@ -445,7 +449,7 @@ export default function DashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
               <span><span className="text-emerald-500">●</span> {t("riskLow")}</span>
               <span><span className="text-amber-500">●</span> {t("riskMedium")}</span>
               <span><span className="text-orange-500">●</span> {t("riskHigh")}</span>
