@@ -7,7 +7,7 @@ import json
 import logging
 from datetime import datetime, date, timedelta
 
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory
@@ -21,47 +21,74 @@ logger = logging.getLogger(__name__)
 
 
 async def recalculate_company_stats():
-    """Перерахувати статистику компаній."""
+    """
+    Перерахувати статистику компаній.
+
+    Один bulk UPDATE замість N+1: раніше цикл робив окремий SELECT на
+    КОЖНУ компанію (тисячі round-trip запитів на кожен запуск, це і
+    "з'їдало" ліміт Network transfer на Neon). Тепер - один запит на
+    всю таблицю.
+    """
     async with async_session_factory() as session:
-        companies = (await session.execute(select(Company))).scalars().all()
-        
-        for company in companies:
-            result = await session.execute(
-                select(
-                    func.count(Tender.id),
-                    func.coalesce(func.sum(Tender.amount), 0),
-                    func.coalesce(func.avg(Tender.amount), 0),
-                ).where(Tender.winner_id == company.id)
-            )
-            row = result.one()
-            company.wins_count = row[0]
-            company.total_amount = float(row[1])
-            company.avg_amount = float(row[2])
-        
+        result = await session.execute(text("""
+            UPDATE companies c
+            SET wins_count = COALESCE(agg.cnt, 0),
+                total_amount = COALESCE(agg.total, 0),
+                avg_amount = COALESCE(agg.avg_amt, 0)
+            FROM (
+                SELECT
+                    winner_id,
+                    COUNT(*) AS cnt,
+                    COALESCE(SUM(amount), 0) AS total,
+                    COALESCE(AVG(amount), 0) AS avg_amt
+                FROM tenders
+                WHERE winner_id IS NOT NULL
+                GROUP BY winner_id
+            ) agg
+            WHERE c.id = agg.winner_id
+        """))
+        # Компанії без жодної перемоги (не потрапили в agg) - обнуляємо
+        await session.execute(text("""
+            UPDATE companies
+            SET wins_count = 0, total_amount = 0, avg_amount = 0
+            WHERE id NOT IN (SELECT DISTINCT winner_id FROM tenders WHERE winner_id IS NOT NULL)
+        """))
         await session.commit()
-        logger.info(f"Статистика оновлена для {len(companies)} компаній")
+        logger.info(f"Статистика компаній оновлена одним запитом (rowcount={result.rowcount})")
 
 
 async def recalculate_buyer_stats():
-    """Перерахувати статистику замовників."""
+    """
+    Перерахувати статистику замовників.
+
+    Аналогічно recalculate_company_stats - один bulk UPDATE замість
+    циклу з окремим запитом на кожного замовника.
+    """
     async with async_session_factory() as session:
-        buyers = (await session.execute(select(Buyer))).scalars().all()
-        
-        for buyer in buyers:
-            result = await session.execute(
-                select(
-                    func.count(Tender.id),
-                    func.coalesce(func.sum(Tender.amount), 0),
-                    func.coalesce(func.avg(Tender.participants_count), 0),
-                ).where(Tender.buyer_id == buyer.id)
-            )
-            row = result.one()
-            buyer.tenders_count = row[0]
-            buyer.total_amount = float(row[1])
-            buyer.avg_participants = float(row[2])
-        
+        result = await session.execute(text("""
+            UPDATE buyers b
+            SET tenders_count = COALESCE(agg.cnt, 0),
+                total_amount = COALESCE(agg.total, 0),
+                avg_participants = COALESCE(agg.avg_p, 0)
+            FROM (
+                SELECT
+                    buyer_id,
+                    COUNT(*) AS cnt,
+                    COALESCE(SUM(amount), 0) AS total,
+                    COALESCE(AVG(participants_count), 0) AS avg_p
+                FROM tenders
+                WHERE buyer_id IS NOT NULL
+                GROUP BY buyer_id
+            ) agg
+            WHERE b.id = agg.buyer_id
+        """))
+        await session.execute(text("""
+            UPDATE buyers
+            SET tenders_count = 0, total_amount = 0, avg_participants = 0
+            WHERE id NOT IN (SELECT DISTINCT buyer_id FROM tenders WHERE buyer_id IS NOT NULL)
+        """))
         await session.commit()
-        logger.info(f"Статистика оновлена для {len(buyers)} замовників")
+        logger.info(f"Статистика замовників оновлена одним запитом (rowcount={result.rowcount})")
 
 
 async def generate_analytics_snapshot():
