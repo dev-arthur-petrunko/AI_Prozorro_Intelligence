@@ -74,14 +74,12 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    # Перерахунок аналітики кожну годину
-    scheduler.add_job(
-        analytics_job,
-        trigger=IntervalTrigger(hours=1),
-        id="recalc_analytics",
-        name="Перерахунок аналітики",
-        replace_existing=True,
-    )
+    # Примітка: окремий годинний тригер аналітики видалено -
+    # recalculate_all() вже викликається з run_sync() (sync_service.py)
+    # щоразу, коли є нові тендери або тендери, що потребують переаналізу.
+    # Дублювання тригерів лише подвоювало кількість запитів до бази
+    # без жодної користі (дані й так оновлюються щонайбільше раз на
+    # SYNC_INTERVAL_MINUTES).
 
     # Очищення застарілих даних раз на добу (о 03:00)
     scheduler.add_job(
