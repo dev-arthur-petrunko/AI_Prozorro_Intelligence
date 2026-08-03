@@ -221,9 +221,11 @@ export default function DashboardPage() {
         .then(setData)
         .catch(console.error);
     load();
-    // Автооновлення кожні 5 хв: синхронізація з Prozorro йде кожні 10 хв,
-    // тому мітка "Дані оновлено" та KPI підтягуються без перезавантаження
-    const timer = setInterval(load, 5 * 60 * 1000);
+    // Автооновлення кожні 15 хв: синхронізація з Prozorro йде кожні 10-30 хв,
+    // тому мітка "Дані оновлено" та KPI підтягуються без перезавантаження.
+    // Було 5 хв - у 2-3 рази частіше за реальну зміну даних, зайве
+    // навантаження на мережевий трафік БД (Neon egress).
+    const timer = setInterval(load, 15 * 60 * 1000);
     return () => clearInterval(timer);
   }, [days]);
 
