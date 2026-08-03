@@ -61,23 +61,22 @@ KPI-метрики з часткою тендерів з високим інде
 ---
 
 ## 🏗️ Архітектура
+┌─────────────────┐ кожні 10 хв ┌──────────────────────────┐
+│ Prozorro API │ ───────────────────► │ FastAPI Backend │
+│ (відкриті дані)│ │ • Sync Service │
+└─────────────────┘ │ • Risk Engine │
+│ • AI Analyzer (Groq) │
+┌─────────────────┐ │ • APScheduler │
+│ Groq API │ ◄─────────────────── │ • PostgreSQL (Docker) │
+│ Llama 3.3 70B │ rate limited └────────────┬─────────────┘
+└─────────────────┘ 28 req/хв, 950/день │ REST API
+┌────────────▼─────────────┐
+┌─────────────────┐ webhook │ Next.js 16 Frontend │
+│ n8n → Telegram │ ◄─────────────────── │ • Дашборд • Аналітика │
+│ (сповіщення) │ │ • Тендери • Звіти │
+└─────────────────┘ │ • Правові засади • UK/EN │
+└──────────────────────────┘
 
-```
-┌─────────────────┐     кожні 10 хв      ┌──────────────────────────┐
-│  Prozorro API   │ ───────────────────► │  FastAPI Backend          │
-│  (відкриті дані)│                      │  • Sync Service           │
-└─────────────────┘                      │  • Risk Engine            │
-                                         │  • AI Analyzer (Groq)     │
-┌─────────────────┐                      │  • APScheduler            │
-│  Groq API       │ ◄─────────────────── │  • SQLite / PostgreSQL    │
-│  Llama 3.3 70B  │   rate limited       └────────────┬─────────────┘
-└─────────────────┘   28 req/хв, 950/день             │ REST API
-                                         ┌────────────▼─────────────┐
-┌─────────────────┐    webhook           │  Next.js 16 Frontend      │
-│  n8n → Telegram │ ◄─────────────────── │  • Дашборд • Аналітика    │
-│  (сповіщення)   │                      │  • Тендери • Звіти        │
-└─────────────────┘                      │  • Правові засади • UK/EN │
-                                         └──────────────────────────┘
 ```
 
 ### Технології
@@ -85,11 +84,11 @@ KPI-метрики з часткою тендерів з високим інде
 | Шар | Стек |
 |---|---|
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2.0 (async), APScheduler |
-| База даних | SQLite (локально) / PostgreSQL — Neon (продакшн) |
+| База даних | SQLite (локально) / PostgreSQL — self-hosted у Docker (продакшн) |
 | AI | Groq API — `llama-3.3-70b-versatile` (безкоштовний тариф) |
 | Frontend | Next.js 16, TypeScript, Tailwind CSS, shadcn/ui, Recharts, next-intl |
 | Автоматизація | n8n (Telegram-сповіщення), Docker Compose |
-| Хмара | Neon + Render (авто-деплой з GitHub) + Vercel |
+| Хмара | Render (авто-деплой з GitHub) + Vercel; PostgreSQL — власний сервер (Docker), доступ через Cloudflare Tunnel |
 
 ---
 
@@ -140,11 +139,11 @@ npm run dev
 
 ---
 
-## ☁️ Деплой у хмару (безкоштовно)
+## ☁️ Продакшн-інфраструктура
 
-Платформа розгортається на безкоштовних тарифах: **Neon** (PostgreSQL) + **Render** (бекенд, авто-деплой з GitHub) + **Vercel** (фронтенд).
+Бекенд розгорнутий на **Render** (авто-деплой з GitHub), фронтенд — на **Vercel**.
 
-📖 Повна покрокова інструкція: **[DEPLOYMENT.md](DEPLOYMENT.md)**
+База даних — власний PostgreSQL у Docker-контейнері, без прив'язки до хмарного провайдера. Доступ бекенда до бази організовано через **Cloudflare Tunnel**: зʼєднання йде повз відкриті порти на роутері, весь трафік шифрується й іде через мережу Cloudflare.
 
 ---
 
@@ -207,25 +206,22 @@ npm run dev
 ---
 
 ## 🗂️ Структура проєкту
-
-```
 ├── backend/
-│   └── app/
-│       ├── api/routes/      # dashboard, tenders, analytics, reports, health
-│       ├── ai/              # Risk Engine (типізація процедур), Groq клієнт, AI analyzer
-│       ├── analytics/       # агрегації, CPV-довідник ДК 021:2015, retention + дедуплікація
-│       ├── collectors/      # Prozorro API клієнт, нормалізація, синхронізація
-│       ├── models/          # Tender, Company, Buyer, AnalyticsSnapshot
-│       └── scheduler/       # APScheduler задачі
+│ └── app/
+│ ├── api/routes/ # dashboard, tenders, analytics, reports, health
+│ ├── ai/ # Risk Engine (типізація процедур), Groq клієнт, AI analyzer
+│ ├── analytics/ # агрегації, CPV-довідник ДК 021:2015, retention + дедуплікація
+│ ├── collectors/ # Prozorro API клієнт, нормалізація, синхронізація
+│ ├── models/ # Tender, Company, Buyer, AnalyticsSnapshot
+│ └── scheduler/ # APScheduler задачі
 ├── frontend/
-│   └── src/
-│       ├── app/[locale]/    # дашборд, тендери, аналітика, звіти, правові засади (UK/EN)
-│       ├── components/      # UI, графіки, бейджі ризику/статусу
-│       └── services/api.ts  # REST клієнт
-├── n8n/                     # Workflow для Telegram-сповіщень
-├── docs/screenshots/        # Скриншоти для README
-└── docker-compose.yml       # PostgreSQL + n8n
-```
+│ └── src/
+│ ├── app/[locale]/ # дашборд, тендери, аналітика, звіти, правові засади (UK/EN)
+│ ├── components/ # UI, графіки, бейджі ризику/статусу
+│ └── services/api.ts # REST клієнт
+├── n8n/ # Workflow для Telegram-сповіщень
+├── docs/screenshots/ # Скриншоти для README
+└── docker-compose.yml # PostgreSQL + n8n
 
 ---
 
@@ -254,7 +250,7 @@ npm run dev
 - **Сторінка «Правові засади»** — джерела даних, законодавча база, юридичний дисклеймер
 - **Telegram-звіти через n8n** — автоматична відправка звітів за розкладом, ендпоінт ручної перевірки `/admin/send-daily-report`
 - **Точніший промт AI-коментаря** — врахування типу процедури у критерії конкуренції, день тижня публікації в даних, чесне «недостатньо даних» для скарг АМКУ, пост-валідація формату відповіді з ретраєм; вікно історичних даних розширено до ~6 місяців
-- **Хмарний деплой** — Neon + Render + Vercel, авто-деплой з GitHub, мітка «Дані оновлено» на кожній сторінці
+- **Хмарний деплой** — Render + Vercel, авто-деплой з GitHub, мітка «Дані оновлено» на кожній сторінці
 
 ---
 
