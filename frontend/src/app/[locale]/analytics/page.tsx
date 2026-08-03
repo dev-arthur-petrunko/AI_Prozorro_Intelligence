@@ -121,8 +121,9 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const load = () => api.getAnalytics(days).then(setData).catch(console.error);
     load();
-    // Автооновлення кожні 5 хв (синхронізація з Prozorro - кожні 10 хв)
-    const timer = setInterval(load, 5 * 60 * 1000);
+    // Автооновлення кожні 15 хв (синхронізація з Prozorro - кожні 10-30 хв).
+    // Було 5 хв - зайві запити до БД без зміни даних.
+    const timer = setInterval(load, 15 * 60 * 1000);
     return () => clearInterval(timer);
   }, [days]);
 
