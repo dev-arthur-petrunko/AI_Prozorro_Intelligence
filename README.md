@@ -206,22 +206,25 @@ npm run dev
 ---
 
 ## 🗂️ Структура проєкту
+
+\`\`\`
 ├── backend/
-│ └── app/
-│ ├── api/routes/ # dashboard, tenders, analytics, reports, health
-│ ├── ai/ # Risk Engine (типізація процедур), Groq клієнт, AI analyzer
-│ ├── analytics/ # агрегації, CPV-довідник ДК 021:2015, retention + дедуплікація
-│ ├── collectors/ # Prozorro API клієнт, нормалізація, синхронізація
-│ ├── models/ # Tender, Company, Buyer, AnalyticsSnapshot
-│ └── scheduler/ # APScheduler задачі
+│   └── app/
+│       ├── api/routes/      # dashboard, tenders, analytics, reports, health
+│       ├── ai/              # Risk Engine (типізація процедур), Groq клієнт, AI analyzer
+│       ├── analytics/       # агрегації, CPV-довідник ДК 021:2015, retention + дедуплікація
+│       ├── collectors/      # Prozorro API клієнт, нормалізація, синхронізація
+│       ├── models/          # Tender, Company, Buyer, AnalyticsSnapshot
+│       └── scheduler/       # APScheduler задачі
 ├── frontend/
-│ └── src/
-│ ├── app/[locale]/ # дашборд, тендери, аналітика, звіти, правові засади (UK/EN)
-│ ├── components/ # UI, графіки, бейджі ризику/статусу
-│ └── services/api.ts # REST клієнт
-├── n8n/ # Workflow для Telegram-сповіщень
-├── docs/screenshots/ # Скриншоти для README
-└── docker-compose.yml # PostgreSQL + n8n
+│   └── src/
+│       ├── app/[locale]/    # дашборд, тендери, аналітика, звіти, правові засади (UK/EN)
+│       ├── components/      # UI, графіки, бейджі ризику/статусу
+│       └── services/api.ts  # REST клієнт
+├── n8n/                     # Workflow для Telegram-сповіщень
+├── docs/screenshots/        # Скриншоти для README
+└── docker-compose.yml       # PostgreSQL + n8n
+\`\`\`
 
 ---
 
